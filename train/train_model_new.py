@@ -1,7 +1,7 @@
 from models import metrics
 from models import ResNets, Xvector
 from models import AM_NoiseT
-from models.Efficient_net.model import EfficientNet
+# from models.Efficient_net.model import EfficientNet
 from models.E_tdnn import Standard_ETDNN
 from models.E_tdnn_plus import Res_Big_ETDNN
 import sys
@@ -157,9 +157,9 @@ def get_model(model, metric, num_classes, model_settings, opt):
         backbone = Xvector.Xvector_SAP(model_settings['in_feat'], model_settings['emb_size'])
         return Xvector.AM_normfree_softmax_anneal_inter_ce_head(backbone, model_settings)        
 
-    elif model == 'EfficientNet-b0' and metric == 'Linear_softmax_ce_head':
-        backbone = EfficientNet.from_name('efficientnet-b0')
-        return ResNets.Linear_softmax_ce_head(backbone, model_settings)
+    # elif model == 'EfficientNet-b0' and metric == 'Linear_softmax_ce_head':
+    #     backbone = EfficientNet.from_name('efficientnet-b0')
+    #     return ResNets.Linear_softmax_ce_head(backbone, model_settings)
     else:
         print('Invalid model or/and metric')
         sys.exit(1)
