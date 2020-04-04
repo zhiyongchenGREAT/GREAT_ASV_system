@@ -60,12 +60,7 @@ if __name__ == '__main__':
         print("No GPU available!")
         sys.exit(1)
 
-
-    if opt.model_load_path != '':
-        checkpoint = torch.load(opt.model_load_path, map_location='cpu')
-        model.load_state_dict(checkpoint['model'], strict=True)
-
-    model = model.to(device)
+    
     optimizer = torch.optim.SGD(model.parameters(), lr=opt.lr, momentum=opt.momentum, weight_decay=opt.weight_decay)    
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 2, eta_min=1e-4, last_epoch=-1)
 
@@ -80,6 +75,28 @@ if __name__ == '__main__':
     batch_sampler=None, num_workers=opt.num_workers, collate_fn=None,\
     pin_memory=False, drop_last=False, timeout=0,\
     worker_init_fn=None, multiprocessing_context=None)
+
+    # tensorboard writer
+    writer_path = os.path.join(opt.log_path, 'tbx_log', opt.train_name)
+    writer = SummaryWriter(log_dir=writer_path)
+    if opt.tbx_path != '':
+        writer_aux_path = os.path.join(opt.tbx_path, opt.train_name)
+        writer_aux = SummaryWriter(log_dir=writer_aux_path)
+
+    # main logger
+    logger = making_log(opt.log_path, opt.continue_indicator)
+    logger.info('Train Name:'+opt.train_name)
+    logger.info('Description:'+opt.description)
+    logger.info(model)
+
+    total_step = 0
+    start_epoch = 0
+    # min_eer = 1.0
+    expected_total_step = len(train_data) * opt.max_epoch // opt.train_batch_size
+    expected_total_step_epoch = len(train_data) // opt.train_batch_size
+    logger.info('Total_step: '+str(expected_total_step))
+
+    model, optimizer, scheduler = resume_training(opt, model, optimizer, scheduler)
 
     # initialize the logging dirs
     desc_log_path = os.path.join(opt.log_path, 'desc.log')
@@ -111,40 +128,8 @@ if __name__ == '__main__':
     else:
         shutil.copy2(opt.config_path, os.path.join(opt.exp_top_dir, 'config_'+opt.continue_indicator+'.log'))
 
-    # tensorboard writer
-    writer_path = os.path.join(opt.log_path, 'tbx_log', opt.train_name)
-    writer = SummaryWriter(log_dir=writer_path)
-    if opt.tbx_path != '':
-        writer_aux_path = os.path.join(opt.tbx_path, opt.train_name)
-        writer_aux = SummaryWriter(log_dir=writer_aux_path)
 
-    # main logger
-    logger = making_log(opt.log_path, opt.continue_indicator)
-    logger.info('Train Name:'+opt.train_name)
-    logger.info('Description:'+opt.description)
-    logger.info(model)
-
-    total_step = 0
-    start_epoch = 0
-    min_eer = 1.0
-    expected_total_step = len(train_data) * opt.max_epoch // opt.train_batch_size
-    expected_total_step_epoch = len(train_data) // opt.train_batch_size
-    logger.info('Total_step: '+str(expected_total_step))
-
-
-    if opt.model_load_path != '':
-        print("Restoring from "+opt.model_load_path)
-        total_step = checkpoint['total_step']
-        start_epoch = checkpoint['start_epoch']
-        min_eer = checkpoint['min_eer']
-        optimizer.load_state_dict(checkpoint['optimizer'])
-
-        sch_statdict = scheduler.state_dict()
-        sch_statdict['last_epoch'] = checkpoint['scheduler']['last_epoch'] - 1
-        sch_statdict['_step_count'] = checkpoint['scheduler']['_step_count'] - 1
-        logger.info(sch_statdict)
-        scheduler.load_state_dict(sch_statdict)
-        scheduler.step()        
+    model = model.to(device)       
 
     timing_point = time.time()
 
