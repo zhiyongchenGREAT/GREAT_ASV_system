@@ -51,16 +51,6 @@ if __name__ == '__main__':
     pin_memory=False, drop_last=False, timeout=0,\
     worker_init_fn=None, multiprocessing_context=None)
 
-    val_data = PickleDataSet(opt.val_list)
-    val_dataloader = My_DataLoader(val_data, batch_size=None, shuffle=False, sampler=None,\
-    batch_sampler=None, num_workers=opt.num_workers, collate_fn=None,\
-    pin_memory=False, drop_last=False, timeout=0,\
-    worker_init_fn=None, multiprocessing_context=None)
-
-
-    # total_step = 0
-    # start_epoch = 0
-
     model, optimizer, scheduler, total_step = resume_training(opt, model, optimizer, scheduler)
 
     opt = dir_init(opt)
@@ -78,18 +68,21 @@ if __name__ == '__main__':
     train_log.writelines([msg+'\n'])
 
 
+
+
+    train_dataloader = iter(train_dataloader)
+    model.train()
+
     train_loss = 0
     train_acc = 0
     val_loss = 0
     val_acc = 0
 
-    train_dataloader = iter(train_dataloader)
-    model.train()
-
-    for count, (batch_x, batch_y) in enumerate(train_dataloader):
-
+    while True:
         try:
             batch_x, batch_y = next(train_dataloader)
+        except StopIteration:
+            break
         
         batch_x = batch_x.cuda(non_blocking=True)
         batch_y = batch_y.cuda(non_blocking=True)
@@ -101,9 +94,9 @@ if __name__ == '__main__':
 
         loss, predict, emb, acc, inter = model(batch_x, batch_y, mod='train')
 
-        train_loss += loss.item()
+        train_loss += loss.item()/opt.print_freq
 
-        train_acc += acc
+        train_acc += acc/opt.print_freq
 
         optimizer.zero_grad()
         loss.backward()
@@ -115,31 +108,25 @@ if __name__ == '__main__':
             scheduler.step() 
 
         if ((count+1) % opt.print_freq) == 0:
-            logger.info('----------')
             delta_time = time.time() - timing_point
-            logger.info('Dur:'+str(delta_time))
             timing_point = time.time()
-            train_loss = train_loss/opt.print_freq
-            train_acc = train_acc/opt.print_freq
 
             for param_group in optimizer.param_groups:
                 current_lr = param_group['lr']
 
-            logger.info('Pro: '+'{0:.3f}'.format(total_step * (1.0 / expected_total_step_epoch))+'/'+str(opt.max_epoch)+' Epoch:'+str(epoch+1)+' Step:'+str(count+1)+' Loss:'+str(train_loss)+' Inter:'+str(inter)+' Acc:'+str(train_acc)+' lr:'+str(current_lr))
+            standard_freq_logging(delta_time, total_step, train_loss, train_acc, current_lr, train_log, tbx_writer)
 
-            writer.add_scalar('train/loss', train_loss, total_step)
-            writer.add_scalar('train/acc', train_acc, total_step)
-            writer.add_scalar('train/lr', current_lr, total_step)
-            writer.add_scalar('train/inter_power', inter, total_step)              
-            writer_aux.add_scalar('train/loss', train_loss, total_step)
-            writer_aux.add_scalar('train/acc', train_acc, total_step)
-            writer_aux.add_scalar('train/lr', current_lr, total_step)
-            writer_aux.add_scalar('train/inter_power', inter, total_step)  
             train_loss = 0
             train_acc = 0
         
         
-        if opt.val_interval_step is not None and ((count+1) % opt.val_interval_step) == 0:
+        if ((count+1) % opt.val_interval_step) == 0:
+            vox1test_cls_eval(model, opt, total_step, train_log, tbx_writer)
+            vox1test_ASV_eval(model, opt, total_step, train_log, tbx_writer)
+            sdsvc_cls_eval(model, opt, total_step, train_log, tbx_writer)
+            sdsvc_ASV_eval(model, opt, total_step, train_log, tbx_writer)
+
+
             model.eval()
             for val_count, (val_x, val_y) in enumerate(val_dataloader):
 
@@ -148,8 +135,8 @@ if __name__ == '__main__':
                 
                 with torch.no_grad():
                     loss, predict, emb, acc, _ = model(val_x, val_y, mod='eval')
+                
                 val_loss += loss.item()
-
                 val_acc += acc                     
 
             val_loss = val_loss / (val_count + 1)  
