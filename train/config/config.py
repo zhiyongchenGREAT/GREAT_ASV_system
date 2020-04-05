@@ -2,23 +2,22 @@
 import os
 
 class Config(object):
-    top_run_name = "default"
     train_name = "small_GAN_again_eq"
     description = 'small_GAN_again_eq'
     model = 'Xvector_SAP'
-    model_settings = {'in_feat': 30, 'emb_size': 512, 'class_num': 1699, 's': 50, 'm': 0.2, 'anneal_steps': 1000, 'lmd_inter': 0.1}
+    model_settings = {'in_feat': 30, 'emb_size': 512, 'class_num': 1699, \
+    's': 50, 'm': 0.2, 'anneal_steps': 1000}
     metric = 'AM_normfree_softmax_anneal_ce_head'
+    max_step = 100000
 
-    max_epoch = 9
-    ckpt_epochs = [9]
-    resulting_epochs = [i+1 for i in range(9)]
-    # th_epochs = 3
-    # steps_per_epoch = 9300 
+    # max_epoch = 9
+    # ckpt_epochs = [9]
+    # resulting_epochs = [i+1 for i in range(9)]
 
-    display = False
-    finetune = False
-    plot_emb = False
-    calculate_fisher = False
+    # display = False
+    # finetune = False
+    # plot_emb = False
+    # calculate_fisher = False
 
     train_list = '/Lun0/zhiyong/small_mix_data/train.csv'
     # train_list = '/Lun0/zhiyong/vox_small_evad_sparse/vox_small_evad_sparse.csv'
@@ -44,40 +43,40 @@ class Config(object):
     # val_list = '/Lun0/zhiyong/dataset/vox2_100_3s_STFT/vox2_val.csv'
     # trial_list = '/Lun0/zhiyong/dataset/vox2_100_3s_STFT/trial'
 
-    val_interval_step = 10000 # changed from 5000
+    val_interval_step = 10000
 
     train_batch_size = 128
 
-    optimizer = 'sgd'
+    # optimizer = 'sgd'
 
     gpu_id = "0"
     num_workers = 32  # how many workers for loading data
     print_freq = 50  # print info every N batch
 
     lr = 1e-2  # initial learning rate
-    lr_milestones = [6]
-    lr_decay_step = []
-    fine_collecting = [1, 2, 3, 4, 5, 6, 7]
-    saveall = False
+    # lr_milestones = [6]
+    # lr_decay_step = []
+    # fine_collecting = [1, 2, 3, 4, 5, 6, 7]
+    # saveall = False
 
     weight_decay = 5e-4
     momentum = 0.9
     lr_decay = 0.1
 
     model_load_path = ''
-    continue_indicator = None
+    # continue_indicator = None
     cudnn_benchmark = True
 
-    config_path = '/Lun2/rzz/kaldi-master/egs/zhiyong/sre19/train/config/config.py'
+    # config_path = '/Lun2/rzz/kaldi-master/egs/zhiyong/sre19/train/config/config.py'
 
     exp_path = "/Lun2/rzz/kaldi-master/egs/zhiyong/sre19/exp"
-    exp_top_dir = os.path.join(exp_path, train_name)
-    checkpoints_path = os.path.join(exp_path, train_name, 'ckpt')
-    log_path = os.path.join(exp_path, train_name, 'train_log')
+    # exp_top_dir = os.path.join(exp_path, train_name)
+    # checkpoints_path = os.path.join(exp_path, train_name, 'ckpt')
+    # log_path = os.path.join(exp_path, train_name, 'train_log')
 
-    tbx_path = '/Lun2/rzz/kaldi-master/egs/zhiyong/sre19/exp/tbx'
-    train_emb_plot_path = os.path.join(log_path, 'train_emb_plot')
-    test_emb_plot_path = os.path.join(log_path, 'test_emb_plot')
-    trial_plot_path = os.path.join(log_path, 'trail_plot')
-    final_results_path = os.path.join(exp_top_dir, 'final_results')
-    temporal_results_path = os.path.join(log_path, 'temporal_results')
+    # tbx_path = '/Lun2/rzz/kaldi-master/egs/zhiyong/sre19/exp/tbx'
+    # train_emb_plot_path = os.path.join(log_path, 'train_emb_plot')
+    # test_emb_plot_path = os.path.join(log_path, 'test_emb_plot')
+    # trial_plot_path = os.path.join(log_path, 'trail_plot')
+    # final_results_path = os.path.join(exp_top_dir, 'final_results')
+    # temporal_results_path = os.path.join(log_path, 'temporal_results')
