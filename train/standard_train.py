@@ -67,9 +67,6 @@ if __name__ == '__main__':
     print(msg)
     train_log.writelines([msg+'\n'])
 
-
-
-
     train_dataloader = iter(train_dataloader)
     model.train()
 
