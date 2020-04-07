@@ -41,7 +41,9 @@ class Config(object):
     # trial_list_2 = '/home/great10/small_mix_data/trial_data_csv.csv'
     # trial_path_2 = '/home/great10/small_mix_data/trials'
 
-    score_calib = False
+    # score_calib = False
+    scoring_config = {'p_target': [0.01, 0.005], 'c_miss': 1, 'c_fa': 1}
+    saver_metric = "MINC"
 
     # train_list = '/Lun0/zhiyong/dataset/vox2_100_3s_STFT/vox2_dev.csv'
     # val_list = '/Lun0/zhiyong/dataset/vox2_100_3s_STFT/vox2_val.csv'
