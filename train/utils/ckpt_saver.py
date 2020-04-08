@@ -8,17 +8,20 @@ def vox1test_metric_saver(model, opt, total_step, optimizer, scheduler, train_lo
     
     for i in range(-1, -len(val_list), -1):
         if val_list[i][:-1].split(' ')[0] == 'vox1test_ASV_eval':
-            line_split = val_list[i][:-1].split(' ')
-            for j in range(len(line_split)):
-                if line_split[j] == metric:
-                    metric_value = float(line_split[j+1])
+            break
+
+    line_split = val_list[i][:-1].split(' ')
+    for j in range(len(line_split)):
+        if line_split[j] == metric+':':
+            metric_value = float(line_split[j+1])
+
     if metric_value is None:
         raise NotImplementedError
     
     if os.path.isfile(save_path):
         with open(os.path.join(opt.checkpoints_path, 'vox1test_metric_saver.log'), 'r') as f:
-            line = f.readlines()[0]
-            best_value = float(line_split(' ')[-1])
+            line = f.readlines()[0][:-1]
+            best_value = float(line.split(' ')[-1])
             if metric_value > best_value:
                 return
 

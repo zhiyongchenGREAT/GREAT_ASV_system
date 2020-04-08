@@ -21,6 +21,11 @@ def dir_init(opt):
         os.makedirs(temporal_results_path)
     opt.temporal_results_path = temporal_results_path
 
+    lr_ctrl_path = os.path.join(exp_top_dir, 'lr_ctrl')
+    if not os.path.isdir(lr_ctrl_path):
+        os.makedirs(lr_ctrl_path)
+    opt.lr_ctrl_path = lr_ctrl_path
+
     desc_log_path = os.path.join(exp_top_dir, 'desc.log')
     with open(desc_log_path, 'w') as f:
         f.write(opt.description)

@@ -106,22 +106,24 @@ if __name__ == '__main__':
             delta_time = time.time() - timing_point
             timing_point = time.time()
 
-            for param_group in optimizer.param_groups:
-                current_lr = param_group['lr']
-
-            standard_freq_logging(delta_time, total_step, train_loss, train_acc, current_lr, train_log, tbx_writer)
+            standard_freq_logging(delta_time, total_step, train_loss, train_acc, optimizer, train_log, tbx_writer)
 
             train_loss = 0
             train_acc = 0
         
         
         if ((count+1) % opt.val_interval_step) == 0:
-            vox1test_cls_eval(model, opt, total_step, train_log, tbx_writer)
-            vox1test_ASV_eval(model, opt, total_step, train_log, tbx_writer)
-            sdsvc_cls_eval(model, opt, total_step, train_log, tbx_writer)
-            sdsvc_ASV_eval(model, opt, total_step, train_log, tbx_writer)
+            vox1test_cls_eval(model, opt, total_step, optimizer, train_log, tbx_writer)
+            vox1test_ASV_eval(model, opt, total_step, optimizer, train_log, tbx_writer)
+            sdsvc_cls_eval(model, opt, total_step, optimizer, train_log, tbx_writer)
+            sdsvc_ASV_eval(model, opt, total_step, optimizer, train_log, tbx_writer)
 
             vox1test_metric_saver(model, opt, total_step, optimizer, scheduler, train_log)
 
+            vox1test_lr_decay_ctrl(opt, total_step, optimizer, scheduler, train_log)
+
+            if stop_ctrl(opt, scheduler): break
+
             torch.backends.cudnn.benchmark = opt.cudnn_benchmark
             model.train()
+    

@@ -1,4 +1,4 @@
-def vox1test_cls_eval(model, opt, total_step, train_log, tbx_writer):
+def vox1test_cls_eval(model, opt, total_step, optimizer, train_log, tbx_writer):
 
     val_data = PickleDataSet(opt.vox_val_list)
     val_dataloader = My_DataLoader(val_data, batch_size=None, shuffle=False, sampler=None,\
@@ -26,15 +26,17 @@ def vox1test_cls_eval(model, opt, total_step, train_log, tbx_writer):
     tbx_writer.add_scalar('vox1test_cls_eval_loss', val_loss, total_step)
     tbx_writer.add_scalar('vox1test_cls_eval_acc', val_acc, total_step)
 
+    current_lr = optimizer.param_groups[0]['lr']
+
     msg = "vox1test_cls_eval Step: {:} Valcount: {:} \
-    ValLoss: {:.4f} ValAcc: {:.4f}".format(total_step, (val_count + 1), val_loss, val_acc)
+    ValLoss: {:.4f} ValAcc: {:.4f} Lr: {:.5f}".format(total_step, (val_count + 1), val_loss, val_acc, current_lr)
     print(msg)
     train_log.writelines([msg+'\n']) 
     with open(opt.val_log_path, 'a') as f:
         f.writelines([msg+'\n']) 
 
 
-def vox1test_ASV_eval(model, opt, total_step, train_log, tbx_writer):
+def vox1test_ASV_eval(model, opt, total_step, optimizer, train_log, tbx_writer):
     torch.backends.cudnn.benchmark = False
     model.eval()
     # print('Final score evaluation')
@@ -167,10 +169,10 @@ def vox1test_ASV_eval(model, opt, total_step, train_log, tbx_writer):
     else:
         eer, minc, actc = scoring(os.path.join(out_dir, 'scores'), opt.vox1test_trial_keys, opt.scoring_config)
 
+    current_lr = optimizer.param_groups[0]['lr']
     msg = "vox1test_ASV_eval Step: {:} EER: {:.4f} \
-    MINC: {:.4f} ACTC: {:.4f}".format(total_step, eer, minc, actc)
+    MINC: {:.4f} ACTC: {:.4f} Lr: {:.5f}".format(total_step, eer, minc, actc, current_lr)
     print(msg)
     train_log.writelines([msg+'\n']) 
     with open(opt.val_log_path, 'a') as f:
         f.writelines([msg+'\n'])    
-        
