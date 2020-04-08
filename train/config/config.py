@@ -45,6 +45,7 @@ class Config(object):
     scoring_config = {'p_target': [0.01, 0.005], 'c_miss': 1, 'c_fa': 1}
     saver_metric = "MINC"
     lr_ctrl = {"metric": "MINC", "Dur": 4, "sig_th": 0.005}
+    expect_scheduler_steps = 7
 
     # train_list = '/Lun0/zhiyong/dataset/vox2_100_3s_STFT/vox2_dev.csv'
     # val_list = '/Lun0/zhiyong/dataset/vox2_100_3s_STFT/vox2_val.csv'

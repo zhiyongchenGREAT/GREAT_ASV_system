@@ -14,3 +14,9 @@ def standard_freq_logging(delta_time, total_step, train_loss, train_acc, optimiz
     writer.add_scalar('Trainloss', train_loss, total_step)
     writer.add_scalar('TrainAcc', train_acc, total_step)
     writer.add_scalar('Lr', current_lr, total_step)
+
+def stop_ctrl_std(opt, scheduler):
+    expect_scheduler_steps = opt.expect_scheduler_steps
+    if scheduler.state_dict()['_step_count'] > expect_scheduler_steps:
+        return True
+    return False

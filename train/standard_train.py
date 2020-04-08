@@ -122,8 +122,13 @@ if __name__ == '__main__':
 
             vox1test_lr_decay_ctrl(opt, total_step, optimizer, scheduler, train_log)
 
-            if stop_ctrl(opt, scheduler): break
+            if stop_ctrl_std(opt, scheduler): break
 
             torch.backends.cudnn.benchmark = opt.cudnn_benchmark
             model.train()
     
+    msg = "Finish training "+opt.train_name
+    print(msg)
+    train_log.writelines([msg+'\n'])    
+    train_log.close()
+    tbx_writer.close()
