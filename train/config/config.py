@@ -10,14 +10,6 @@ class Config(object):
     metric = 'AM_normfree_softmax_anneal_ce_head'
     max_step = 100000
 
-    # max_epoch = 9
-    # ckpt_epochs = [9]
-    # resulting_epochs = [i+1 for i in range(9)]
-
-    # display = False
-    # finetune = False
-    # plot_emb = False
-    # calculate_fisher = False
 
     train_list = '/Lun0/zhiyong/small_mix_data/train.csv'
     # train_list = '/Lun0/zhiyong/vox_small_evad_sparse/vox_small_evad_sparse.csv'
@@ -31,60 +23,27 @@ class Config(object):
     vox1test_aux_list = ''
     vox1test_aux_keys = ''
 
-
-    # train_list = '/home/great10/small_mix_data/train_mix.csv'
-    # # train_list = '/home/great10/small_mix_data/train.csv'
-    # # train_list = '/home/great10/small_mix_data/train_in.csv'
-    # val_list = '/home/great10/small_mix_data/val_data_csv.csv'
-    # trial_list = '/home/great10/small_mix_data/trial_data_in_csv.csv'
-    # trial_path = '/home/great10/small_mix_data/trials_in'
-    # trial_list_2 = '/home/great10/small_mix_data/trial_data_csv.csv'
-    # trial_path_2 = '/home/great10/small_mix_data/trials'
-
-    # score_calib = False
     scoring_config = {'p_target': [0.01, 0.005], 'c_miss': 1, 'c_fa': 1}
     saver_metric = "MINC"
     lr_ctrl = {"metric": "MINC", "Dur": 4, "sig_th": 0.005}
     expect_scheduler_steps = 7
 
-    # train_list = '/Lun0/zhiyong/dataset/vox2_100_3s_STFT/vox2_dev.csv'
-    # val_list = '/Lun0/zhiyong/dataset/vox2_100_3s_STFT/vox2_val.csv'
-    # trial_list = '/Lun0/zhiyong/dataset/vox2_100_3s_STFT/trial'
-
     val_interval_step = 10000
 
     train_batch_size = 128
-
-    # optimizer = 'sgd'
 
     gpu_id = "0"
     num_workers = 32  # how many workers for loading data
     print_freq = 50  # print info every N batch
 
     lr = 1e-2  # initial learning rate
-    # lr_milestones = [6]
-    # lr_decay_step = []
-    # fine_collecting = [1, 2, 3, 4, 5, 6, 7]
-    # saveall = False
 
     weight_decay = 5e-4
     momentum = 0.9
     lr_decay = 0.1
 
     model_load_path = ''
-    # continue_indicator = None
     cudnn_benchmark = True
 
-    # config_path = '/Lun2/rzz/kaldi-master/egs/zhiyong/sre19/train/config/config.py'
-
     exp_path = "/Lun2/rzz/kaldi-master/egs/zhiyong/sre19/exp"
-    # exp_top_dir = os.path.join(exp_path, train_name)
-    # checkpoints_path = os.path.join(exp_path, train_name, 'ckpt')
-    # log_path = os.path.join(exp_path, train_name, 'train_log')
-
-    # tbx_path = '/Lun2/rzz/kaldi-master/egs/zhiyong/sre19/exp/tbx'
-    # train_emb_plot_path = os.path.join(log_path, 'train_emb_plot')
-    # test_emb_plot_path = os.path.join(log_path, 'test_emb_plot')
-    # trial_plot_path = os.path.join(log_path, 'trail_plot')
-    # final_results_path = os.path.join(exp_top_dir, 'final_results')
-    # temporal_results_path = os.path.join(log_path, 'temporal_results')
+    
