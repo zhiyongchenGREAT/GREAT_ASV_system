@@ -1,3 +1,12 @@
+import os
+import sys
+sys.path.append(os.path.dirname(os.path.realpath(__file__)) + '/../')
+
+import torch
+import numpy as np
+from read_data import *
+from my_dataloader import *
+
 def vox1test_cls_eval(model, opt, total_step, optimizer, train_log, tbx_writer):
 
     val_data = PickleDataSet(opt.vox_val_list)
@@ -168,6 +177,10 @@ def vox1test_ASV_eval(model, opt, total_step, optimizer, train_log, tbx_writer):
         eer, minc, actc = scoring(os.path.join(out_dir, 'scores_calib'), opt.vox1test_trial_keys, opt.scoring_config)
     else:
         eer, minc, actc = scoring(os.path.join(out_dir, 'scores'), opt.vox1test_trial_keys, opt.scoring_config)
+
+    tbx_writer.add_scalar('vox1test_ASV_eval_EER', eer, total_step)
+    tbx_writer.add_scalar('vox1test_ASV_eval_MINC', minc, total_step)
+    tbx_writer.add_scalar('vox1test_ASV_eval_ACTC', actc, total_step)
 
     current_lr = optimizer.param_groups[0]['lr']
     msg = "vox1test_ASV_eval Step: {:} EER: {:.4f} \

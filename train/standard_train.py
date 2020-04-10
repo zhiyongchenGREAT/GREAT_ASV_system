@@ -1,24 +1,13 @@
 #!/usr/bin/env python
-
-import os
-import numpy as np
 import time
-import logging
-import sys
-import shutil
-from datetime import datetime
 
 import torch
-from torch.utils.data import DataLoader, RandomSampler
-from my_dataloader import My_DataLoader
-from read_data import CSVDataSet, WithReplacementRandomSampler, PickleDataSet, PickleDataSet_single
-from torch.optim.lr_scheduler import StepLR, MultiStepLR
-from config.config import Config
-from train_model_new import get_model
-from tensorboardX import SummaryWriter
 import utils
-
-torch.multiprocessing.set_sharing_strategy('file_system')
+from torch.utils.data import *
+from my_dataloader import *
+from read_data import *
+from config.config import *
+from model_bank import *
 
 
 if __name__ == '__main__':
@@ -46,9 +35,10 @@ if __name__ == '__main__':
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 2, eta_min=1e-4, last_epoch=-1)
 
     train_data = PickleDataSet_single(opt.train_list)
-    train_dataloader = My_DataLoader(train_data, batch_size=opt.train_batch_size, shuffle=False, sampler=RandomSampler(train_data, replacement=True),\
-    batch_sampler=None, num_workers=opt.num_workers, collate_fn=None,\
-    pin_memory=False, drop_last=False, timeout=0,\
+    train_dataloader = My_DataLoader(train_data, batch_size=opt.train_batch_size, shuffle=False, \
+    sampler=RandomSampler(train_data, replacement=True, num_samples=opt.max_step), \
+    batch_sampler=None, num_workers=opt.num_workers, collate_fn=None, \
+    pin_memory=False, drop_last=False, timeout=0, \
     worker_init_fn=None, multiprocessing_context=None)
 
     model, optimizer, scheduler, total_step = resume_training(opt, model, optimizer, scheduler)
@@ -118,9 +108,9 @@ if __name__ == '__main__':
             sdsvc_cls_eval(model, opt, total_step, optimizer, train_log, tbx_writer)
             sdsvc_ASV_eval(model, opt, total_step, optimizer, train_log, tbx_writer)
 
-            vox1test_metric_saver(model, opt, total_step, optimizer, scheduler, train_log)
-
             vox1test_lr_decay_ctrl(opt, total_step, optimizer, scheduler, train_log)
+
+            vox1test_metric_saver(model, opt, total_step, optimizer, scheduler, train_log)
 
             if stop_ctrl_std(opt, scheduler): break
 

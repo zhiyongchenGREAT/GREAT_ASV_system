@@ -1,3 +1,5 @@
+import os
+
 def vox1test_lr_decay_ctrl(opt, total_step, optimizer, scheduler, train_log):   
     current_lr = optimizer.param_groups[0]['lr']
     scheduler_step = scheduler.state_dict()['_step_count']

@@ -1,8 +1,10 @@
+import os
+import sys
+sys.path.append(os.path.dirname(os.path.realpath(__file__)) + '/../')
 import torch
 import torch.nn as nn
-from models.metrics import *
 import numpy as np
-from models.Xvector_att import self_attention_layer
+import models
 from torch.autograd import Function
 
 

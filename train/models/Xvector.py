@@ -1,8 +1,10 @@
+import os
+import sys
+sys.path.append(os.path.dirname(os.path.realpath(__file__)) + '/../')
 import torch
 import torch.nn as nn
-from models.metrics import *
 import numpy as np
-from models.Xvector_att import self_attention_layer
+import models
 
 class Xvector_SAP(torch.nn.Module):
     def __init__(self, feat_dim, emb_dim):
@@ -14,8 +16,6 @@ class Xvector_SAP(torch.nn.Module):
         self.kernel_sizes = [5, 3, 3, 1, 1]
         self.dilations = [1,2,3,1,1]
         self.hidden_dim = 3000
-
-
 
         self.tdnn1 = torch.nn.Sequential(
             nn.Conv1d(self.in_channels[0],self.layer_sizes[0],self.kernel_sizes[0],dilation=self.dilations[0]),

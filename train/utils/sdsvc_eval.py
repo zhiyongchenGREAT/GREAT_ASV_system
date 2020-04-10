@@ -1,3 +1,12 @@
+import os
+import sys
+sys.path.append(os.path.dirname(os.path.realpath(__file__)) + '/../')
+
+import torch
+import numpy as np
+from read_data import *
+from my_dataloader import *
+
 def sdsvc_cls_eval(model, opt, total_step, optimizer, train_log, tbx_writer):
 
     val_data = PickleDataSet(opt.sdsvc_val_list)
@@ -170,6 +179,7 @@ def sdsvc_ASV_eval(model, opt, total_step, optimizer, train_log, tbx_writer):
 
     tbx_writer.add_scalar('sdsvc_ASV_eval_EER', eer, total_step)
     tbx_writer.add_scalar('sdsvc_ASV_eval_MINC', minc, total_step)
+    tbx_writer.add_scalar('sdsvc_ASV_eval_ACTC', actc, total_step)
 
     current_lr = optimizer.param_groups[0]['lr']
     msg = "sdsvc_ASV_eval Step: {:} EER: {:.4f} \
