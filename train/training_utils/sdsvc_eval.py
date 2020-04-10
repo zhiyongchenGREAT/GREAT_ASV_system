@@ -1,15 +1,17 @@
 import os
 import sys
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + '/../')
+sys.path.append(os.path.dirname(os.path.realpath(__file__)) + '/../../')
 
 import torch
 import numpy as np
 from read_data import *
 from my_dataloader import *
+import score
 
-def vox1test_cls_eval(model, opt, total_step, optimizer, train_log, tbx_writer):
+def sdsvc_cls_eval(model, opt, total_step, optimizer, train_log, tbx_writer):
 
-    val_data = PickleDataSet(opt.vox_val_list)
+    val_data = PickleDataSet(opt.sdsvc_val_list)
     val_dataloader = My_DataLoader(val_data, batch_size=None, shuffle=False, sampler=None,\
     batch_sampler=None, num_workers=opt.num_workers, collate_fn=None,\
     pin_memory=False, drop_last=False, timeout=0,\
@@ -32,12 +34,11 @@ def vox1test_cls_eval(model, opt, total_step, optimizer, train_log, tbx_writer):
     val_loss = val_loss / (val_count + 1)  
     val_acc = val_acc / (val_count + 1)
 
-    tbx_writer.add_scalar('vox1test_cls_eval_loss', val_loss, total_step)
-    tbx_writer.add_scalar('vox1test_cls_eval_acc', val_acc, total_step)
+    tbx_writer.add_scalar('sdsvc_cls_eval_loss', val_loss, total_step)
+    tbx_writer.add_scalar('sdsvc_cls_eval_acc', val_acc, total_step)
 
     current_lr = optimizer.param_groups[0]['lr']
-
-    msg = "vox1test_cls_eval Step: {:} Valcount: {:} \
+    msg = "sdsvc_cls_eval Step: {:} Valcount: {:} \
     ValLoss: {:.4f} ValAcc: {:.4f} Lr: {:.5f}".format(total_step, (val_count + 1), val_loss, val_acc, current_lr)
     print(msg)
     train_log.writelines([msg+'\n']) 
@@ -45,12 +46,12 @@ def vox1test_cls_eval(model, opt, total_step, optimizer, train_log, tbx_writer):
         f.writelines([msg+'\n']) 
 
 
-def vox1test_ASV_eval(model, opt, total_step, optimizer, train_log, tbx_writer):
+def sdsvc_ASV_eval(model, opt, total_step, optimizer, train_log, tbx_writer):
     torch.backends.cudnn.benchmark = False
     model.eval()
     # print('Final score evaluation')
 
-    train_data = PickleDataSet(opt.vox1test_trial_list)
+    train_data = PickleDataSet(opt.sdsvc_trial_list)
     train_dataloader = My_DataLoader(train_data, batch_size=None, shuffle=False, sampler=None,\
     batch_sampler=None, num_workers=opt.num_workers, collate_fn=None,\
     pin_memory=False, drop_last=False, timeout=0,\
@@ -77,11 +78,11 @@ def vox1test_ASV_eval(model, opt, total_step, optimizer, train_log, tbx_writer):
         # if (count+1) % 500 == 0:
         #     print(count+1)
 
-    msg = "vox1test_ASV_eval Step: {:} Embcount: {:}".format(total_step, (count + 1))
+    msg = "sdsvc_ASV_eval Step: {:} Embcount: {:}".format(total_step, (count + 1))
     print(msg)
     train_log.writelines([msg+'\n']) 
     
-    out_dir = os.path.join(opt.temporal_results_path, 's'+str(total_step), 'vox1test_ASV_eval')
+    out_dir = os.path.join(opt.temporal_results_path, 's'+str(total_step), 'sdsvc_ASV_eval')
     if not os.path.isdir(out_dir):
         os.makedirs(out_dir)
     f_out = open(os.path.join(out_dir, 'scores'), 'w')   
@@ -106,12 +107,12 @@ def vox1test_ASV_eval(model, opt, total_step, optimizer, train_log, tbx_writer):
     
     f_out.close()
 
-    msg = "vox1test_ASV_eval Step: {:} Trialcount: {:}".format(total_step, (count + 1))
+    msg = "sdsvc_trial_keys Step: {:} Trialcount: {:}".format(total_step, (count + 1))
     print(msg)
     train_log.writelines([msg+'\n']) 
 
-    if hasattr(opt, 'vox1test_aux_list') and hasattr(opt, 'vox1test_aux_keys'):
-        train_data = PickleDataSet(opt.vox1test_aux_list)
+    if hasattr(opt, 'sdsvc_aux_list') and hasattr(opt, 'sdsvc_aux_keys'):
+        train_data = PickleDataSet(opt.sdsvc_aux_list)
         train_dataloader = My_DataLoader(train_data, batch_size=None, shuffle=False, sampler=None,\
         batch_sampler=None, num_workers=opt.num_workers, collate_fn=None,\
         pin_memory=False, drop_last=False, timeout=0,\
@@ -138,11 +139,11 @@ def vox1test_ASV_eval(model, opt, total_step, optimizer, train_log, tbx_writer):
             # if (count+1) % 500 == 0:
             #     print(count+1)
 
-        msg = "vox1test_ASV_eval Step: {:} AuxEmbcount: {:}".format(total_step, (count + 1))
+        msg = "sdsvc_ASV_eval Step: {:} AuxEmbcount: {:}".format(total_step, (count + 1))
         print(msg)
         train_log.writelines([msg+'\n']) 
         
-        out_dir = os.path.join(opt.temporal_results_path, 's'+str(total_step), 'vox1test_ASV_eval')
+        out_dir = os.path.join(opt.temporal_results_path, 's'+str(total_step), 'sdsvc_ASV_eval')
         if not os.path.isdir(out_dir):
             os.makedirs(out_dir)
         f_out = open(os.path.join(out_dir, 'scores_aux'), 'w')   
@@ -167,25 +168,26 @@ def vox1test_ASV_eval(model, opt, total_step, optimizer, train_log, tbx_writer):
         
         f_out.close()
 
-        msg = "vox1test_ASV_eval Step: {:} TrialAuxcount: {:}".format(total_step, (count + 1))
+        msg = "sdsvc_ASV_eval Step: {:} TrialAuxcount: {:}".format(total_step, (count + 1))
         print(msg)
         train_log.writelines([msg+'\n'])
 
-    if hasattr(opt, 'vox1test_aux_list') and hasattr(opt, 'vox1test_aux_keys'):
-        calibrating(os.path.join(out_dir, 'calib.pth'), 50, opt.vox1test_aux_keys, [os.path.join(out_dir, 'scores_aux')])
-        applying(os.path.join(out_dir, 'calib.pth'), [os.path.join(out_dir, 'scores')], os.path.join(out_dir, 'scores_calib'))
-        eer, minc, actc = scoring(os.path.join(out_dir, 'scores_calib'), opt.vox1test_trial_keys, opt.scoring_config)
+    if hasattr(opt, 'sdsvc_aux_list') and hasattr(opt, 'sdsvc_aux_keys'):
+        score.calibrating(os.path.join(out_dir, 'calib.pth'), 50, opt.sdsvc_aux_keys, [os.path.join(out_dir, 'scores_aux')])
+        score.applying(os.path.join(out_dir, 'calib.pth'), [os.path.join(out_dir, 'scores')], os.path.join(out_dir, 'scores_calib'))
+        eer, minc, actc = score.scoring(os.path.join(out_dir, 'scores_calib'), opt.sdsvc_trial_keys, opt.scoring_config)
     else:
-        eer, minc, actc = scoring(os.path.join(out_dir, 'scores'), opt.vox1test_trial_keys, opt.scoring_config)
+        eer, minc, actc = score.scoring(os.path.join(out_dir, 'scores'), opt.sdsvc_trial_keys, opt.scoring_config)
 
-    tbx_writer.add_scalar('vox1test_ASV_eval_EER', eer, total_step)
-    tbx_writer.add_scalar('vox1test_ASV_eval_MINC', minc, total_step)
-    tbx_writer.add_scalar('vox1test_ASV_eval_ACTC', actc, total_step)
+    tbx_writer.add_scalar('sdsvc_ASV_eval_EER', eer, total_step)
+    tbx_writer.add_scalar('sdsvc_ASV_eval_MINC', minc, total_step)
+    tbx_writer.add_scalar('sdsvc_ASV_eval_ACTC', actc, total_step)
 
     current_lr = optimizer.param_groups[0]['lr']
-    msg = "vox1test_ASV_eval Step: {:} EER: {:.4f} \
+    msg = "sdsvc_ASV_eval Step: {:} EER: {:.4f} \
     MINC: {:.4f} ACTC: {:.4f} Lr: {:.5f}".format(total_step, eer, minc, actc, current_lr)
     print(msg)
     train_log.writelines([msg+'\n']) 
     with open(opt.val_log_path, 'a') as f:
         f.writelines([msg+'\n'])    
+        

@@ -1,7 +1,8 @@
+import os
+import sys
+sys.path.append(os.path.dirname(os.path.realpath(__file__)))
+
 import torch
-import torch.nn as nn
-import torch.optim as optim
-from torch.autograd import Variable
 import argparse
 import numpy as np
 from calibrate_scores import LinearModel

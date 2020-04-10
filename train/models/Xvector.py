@@ -4,7 +4,6 @@ sys.path.append(os.path.dirname(os.path.realpath(__file__)) + '/../')
 import torch
 import torch.nn as nn
 import numpy as np
-import models
 
 class Xvector_SAP(torch.nn.Module):
     def __init__(self, feat_dim, emb_dim):
@@ -414,7 +413,7 @@ class AMSoftmax_normfree(nn.Module):
         self.out_features = out_features
         self.s = s
         self.m = m
-        self.weight = Parameter(torch.FloatTensor(out_features, in_features))
+        self.weight = nn.Parameter(torch.FloatTensor(out_features, in_features))
         nn.init.xavier_uniform_(self.weight)
 
     def forward(self, input, label, s, m):
@@ -448,7 +447,7 @@ class AMSoftmax(nn.Module):
         self.out_features = out_features
         self.s = s
         self.m = m
-        self.weight = Parameter(torch.FloatTensor(out_features, in_features))
+        self.weight = nn.Parameter(torch.FloatTensor(out_features, in_features))
         nn.init.xavier_uniform_(self.weight)
 
     def forward(self, input, label, s, m):
