@@ -40,4 +40,4 @@ def vox1test_metric_saver(model, opt, total_step, optimizer, scheduler, train_lo
     print(msg)
     train_log.writelines([msg+'\n']) 
     with open(os.path.join(opt.checkpoints_path, 'vox1test_metric_saver.log'), 'w') as f:
-        f.write('s'+str(total_step)+' '+metric+' '+metric_value)
+        f.write('s'+str(total_step)+' '+metric+' '+str(metric_value))

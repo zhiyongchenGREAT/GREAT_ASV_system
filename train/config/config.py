@@ -20,15 +20,15 @@ class Config(object):
     sdsvc_trial_keys = '/Lun0/zhiyong/sdsvc_small_100_dataset/sdsvc_trial_keys.csv'
     vox1test_trial_list = '/Lun0/zhiyong/sdsvc_small_100_dataset/vox1test_trial_list.csv'
     vox1test_trial_keys = '/Lun0/zhiyong/sdsvc_small_100_dataset/vox1test_trial_keys.csv'
-    vox1test_aux_list = '/Lun0/zhiyong/sdsvc_small_100_dataset/vox1test_aux_list.csv'
-    vox1test_aux_keys = '/Lun0/zhiyong/sdsvc_small_100_dataset/vox1test_aux_keys.csv'
+    # vox1test_aux_list = '/Lun0/zhiyong/sdsvc_small_100_dataset/vox1test_aux_list.csv'
+    # vox1test_aux_keys = '/Lun0/zhiyong/sdsvc_small_100_dataset/vox1test_aux_keys.csv'
 
     scoring_config = {'p_target': [0.01, 0.005], 'c_miss': 1, 'c_fa': 1}
     saver_metric = "MINC"
     lr_ctrl = {"metric": "MINC", "Dur": 4, "sig_th": 0.005}
     expect_scheduler_steps = 3
 
-    val_interval_step = 1000
+    val_interval_step = 500
 
     train_batch_size = 128
 

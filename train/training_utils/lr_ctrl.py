@@ -34,7 +34,7 @@ def vox1test_lr_decay_ctrl(opt, total_step, optimizer, scheduler, train_log):
         with open(cur_anchor_log, 'r') as f:
             line = f.readlines()[0][:-1]
             line_split = line.split(' ')
-            for i in len(line_split):
+            for i in range(len(line_split)):
                 if line_split[i] == "Anchor:":
                     Anchor = float(line_split[i+1])
                 if line_split[i] == "Count:":
