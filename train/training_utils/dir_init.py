@@ -40,7 +40,8 @@ def dir_init(opt):
         f.write('Val log for '+opt.train_name+'\n')
     opt.val_log_path = val_log_path
 
-    shutil.copytree('../../train', os.path.join(opt.exp_top_dir, 'code'))
+    train_file_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+    shutil.copytree(train_file_dir, os.path.join(opt.exp_top_dir, 'code'))
 
     return opt
 

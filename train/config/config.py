@@ -5,7 +5,7 @@ class Config(object):
     train_name = "new_pipe_test"
     description = 'new_pipe_test'
     model = 'Xvector_SAP'
-    model_settings = {'in_feat': 30, 'emb_size': 512, 'class_num': 1699, \
+    model_settings = {'in_feat': 30, 'emb_size': 512, 'class_num': 1311, \
     's': 50, 'm': 0.2, 'anneal_steps': 1000}
     metric = 'AM_normfree_softmax_anneal_ce_head'
     max_step = 100000

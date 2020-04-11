@@ -3,6 +3,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + '/../')
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import numpy as np
 
 class Xvector_SAP(torch.nn.Module):

@@ -47,7 +47,7 @@ def score_me(score_list, label_list, configuration):
     #     print('{}\t{:05.2f}\t{:.3f}\t{:.3f}'.format(ds.upper(), eer*100,
     #           minc, actc))
 
-    return eer, minc, actc
+    return eer, avg_min_c, act_c_avg
 
 def scoring(score_file, key, configuration):
     score_list = []

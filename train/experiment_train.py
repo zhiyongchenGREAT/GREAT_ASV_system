@@ -37,7 +37,7 @@ if __name__ == '__main__':
 
     train_data = PickleDataSet_single(opt.train_list)
     train_dataloader = My_DataLoader(train_data, batch_size=opt.train_batch_size, shuffle=False, \
-    sampler=RandomSampler(train_data, replacement=True, num_samples=opt.max_step), \
+    sampler=RandomSampler(train_data, replacement=True, num_samples=opt.max_step*opt.train_batch_size), \
     batch_sampler=None, num_workers=opt.num_workers, collate_fn=None, \
     pin_memory=False, drop_last=False, timeout=0, \
     worker_init_fn=None, multiprocessing_context=None)
@@ -90,7 +90,7 @@ if __name__ == '__main__':
 
         total_step += 1
 
-        if ((count+1) % opt.print_freq) == 0:
+        if (total_step % opt.print_freq) == 0:
             delta_time = time.time() - timing_point
             timing_point = time.time()
 
@@ -100,11 +100,11 @@ if __name__ == '__main__':
             train_acc = 0
         
         
-        if ((count+1) % opt.val_interval_step) == 0:
+        if (total_step % opt.val_interval_step) == 0:
             training_utils.vox1test_cls_eval(model, opt, total_step, optimizer, train_log, tbx_writer)
-            training_utils.vox1test_ASV_eval(model, opt, total_step, optimizer, train_log, tbx_writer)
+            training_utils.vox1test_ASV_eval(model, device, opt, total_step, optimizer, train_log, tbx_writer)
             training_utils.sdsvc_cls_eval(model, opt, total_step, optimizer, train_log, tbx_writer)
-            training_utils.sdsvc_ASV_eval(model, opt, total_step, optimizer, train_log, tbx_writer)
+            training_utils.sdsvc_ASV_eval(model, device, opt, total_step, optimizer, train_log, tbx_writer)
 
             training_utils.vox1test_lr_decay_ctrl(opt, total_step, optimizer, scheduler, train_log)
 
@@ -115,7 +115,7 @@ if __name__ == '__main__':
             torch.backends.cudnn.benchmark = opt.cudnn_benchmark
             model.train()
     
-    msg = "Finish training "+opt.train_name
+    msg = "Finish training "+opt.train_name+" with Step: "+ str(total_step)
     print(msg)
     train_log.writelines([msg+'\n'])    
     train_log.close()

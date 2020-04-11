@@ -38,15 +38,15 @@ def sdsvc_cls_eval(model, opt, total_step, optimizer, train_log, tbx_writer):
     tbx_writer.add_scalar('sdsvc_cls_eval_acc', val_acc, total_step)
 
     current_lr = optimizer.param_groups[0]['lr']
-    msg = "sdsvc_cls_eval Step: {:} Valcount: {:} \
-    ValLoss: {:.4f} ValAcc: {:.4f} Lr: {:.5f}".format(total_step, (val_count + 1), val_loss, val_acc, current_lr)
+    msg = "sdsvc_cls_eval Step: {:} Valcount: {:} ValLoss: {:.4f} ValAcc: {:.4f} Lr: {:.5f}"\
+    .format(total_step, (val_count + 1), val_loss, val_acc, current_lr)
     print(msg)
     train_log.writelines([msg+'\n']) 
     with open(opt.val_log_path, 'a') as f:
         f.writelines([msg+'\n']) 
 
 
-def sdsvc_ASV_eval(model, opt, total_step, optimizer, train_log, tbx_writer):
+def sdsvc_ASV_eval(model, device, opt, total_step, optimizer, train_log, tbx_writer):
     torch.backends.cudnn.benchmark = False
     model.eval()
     # print('Final score evaluation')
@@ -75,8 +75,6 @@ def sdsvc_ASV_eval(model, opt, total_step, optimizer, train_log, tbx_writer):
         else:
             print('repeat eer:', label)
             break        
-        # if (count+1) % 500 == 0:
-        #     print(count+1)
 
     msg = "sdsvc_ASV_eval Step: {:} Embcount: {:}".format(total_step, (count + 1))
     print(msg)
@@ -90,10 +88,11 @@ def sdsvc_ASV_eval(model, opt, total_step, optimizer, train_log, tbx_writer):
     for i in test_list:
         test_list[i] = (1.0 / np.linalg.norm(test_list[i])) * test_list[i]
     
-    with open(opt.vox1test_trial_keys, 'r') as f:
+    with open(opt.sdsvc_trial_keys, 'r') as f:
         for count, line in enumerate(f):
             if count == 0:
-                print(line)
+                pass
+                # print(line)
 
             enroll_emb = test_list[line.split(' ')[0][:-4]].squeeze()
             test_emb = test_list[line.split(' ')[1][:-4]].squeeze()
@@ -101,9 +100,6 @@ def sdsvc_ASV_eval(model, opt, total_step, optimizer, train_log, tbx_writer):
             cosine = np.dot(enroll_emb, test_emb)
             
             f_out.write(line.split(' ')[0]+' '+line.split(' ')[1]+' '+str(cosine)+'\n')
-            
-            if (count+1) % 5000 == 0:
-                print(count+1)
     
     f_out.close()
 
@@ -136,8 +132,6 @@ def sdsvc_ASV_eval(model, opt, total_step, optimizer, train_log, tbx_writer):
             else:
                 print('repeat eer:', label)
                 break        
-            # if (count+1) % 500 == 0:
-            #     print(count+1)
 
         msg = "sdsvc_ASV_eval Step: {:} AuxEmbcount: {:}".format(total_step, (count + 1))
         print(msg)
@@ -151,10 +145,11 @@ def sdsvc_ASV_eval(model, opt, total_step, optimizer, train_log, tbx_writer):
         for i in test_list:
             test_list[i] = (1.0 / np.linalg.norm(test_list[i])) * test_list[i]
         
-        with open(opt.vox1test_trial_keys, 'r') as f:
+        with open(opt.sdsvc_aux_keys, 'r') as f:
             for count, line in enumerate(f):
                 if count == 0:
-                    print(line)
+                    pass
+                    # print(line)
 
                 enroll_emb = test_list[line.split(' ')[0][:-4]].squeeze()
                 test_emb = test_list[line.split(' ')[1][:-4]].squeeze()
@@ -162,9 +157,6 @@ def sdsvc_ASV_eval(model, opt, total_step, optimizer, train_log, tbx_writer):
                 cosine = np.dot(enroll_emb, test_emb)
                 
                 f_out.write(line.split(' ')[0]+' '+line.split(' ')[1]+' '+str(cosine)+'\n')
-                
-                if (count+1) % 5000 == 0:
-                    print(count+1)
         
         f_out.close()
 
@@ -184,8 +176,8 @@ def sdsvc_ASV_eval(model, opt, total_step, optimizer, train_log, tbx_writer):
     tbx_writer.add_scalar('sdsvc_ASV_eval_ACTC', actc, total_step)
 
     current_lr = optimizer.param_groups[0]['lr']
-    msg = "sdsvc_ASV_eval Step: {:} EER: {:.4f} \
-    MINC: {:.4f} ACTC: {:.4f} Lr: {:.5f}".format(total_step, eer, minc, actc, current_lr)
+    msg = "sdsvc_ASV_eval Step: {:} EER: {:.4f} MINC: {:.4f} ACTC: {:.4f} Lr: {:.5f}"\
+    .format(total_step, eer, minc, actc, current_lr)
     print(msg)
     train_log.writelines([msg+'\n']) 
     with open(opt.val_log_path, 'a') as f:
