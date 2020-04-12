@@ -2,13 +2,13 @@
 import os
 
 class Config(object):
-    train_name = "new_pipe_test_full"
-    description = 'new_pipe_test_full'
+    train_name = "new_pipe_test_fullvoxonly"
+    description = 'new_pipe_test_fullvoxonly'
     model = 'Xvector_SAP'
-    model_settings = {'in_feat': 30, 'emb_size': 512, 'class_num': 7811, \
+    model_settings = {'in_feat': 30, 'emb_size': 512, 'class_num': 7323, \
     's': 50, 'm': 0.2, 'anneal_steps': 10000}
     metric = 'AM_normfree_softmax_anneal_ce_head'
-    max_step = 100000
+    max_step = 1000000
 
 
     # train_list = '/Lun0/zhiyong/sdsvc_small_100_dataset/mix_1311_smalltrain.csv'
@@ -21,7 +21,7 @@ class Config(object):
     # # vox1test_aux_list = '/Lun0/zhiyong/sdsvc_small_100_dataset/vox1test_aux_list.csv'
     # # vox1test_aux_keys = '/Lun0/zhiyong/sdsvc_small_100_dataset/vox1test_aux_keys.csv'
 
-    train_list = '/Lun0/zhiyong/sdsvc_full_488_dataset/mix_7811_fulltrain.csv'
+    train_list = '/Lun0/zhiyong/sdsvc_full_488_dataset/source_vox_7323_fulltrain.csv'
     vox_val_list = '/Lun0/zhiyong/sdsvc_full_488_dataset/source_vox_7323_fullval.csv'
     sdsvc_val_list = '/Lun0/zhiyong/sdsvc_full_488_dataset/target_sdsvc_488_fullval.csv'
     sdsvc_trial_list = '/Lun0/zhiyong/sdsvc_full_488_dataset/sdsvc_trial_list.csv'
@@ -36,7 +36,7 @@ class Config(object):
     lr_ctrl = {"metric": "MINC", "Dur": 4, "sig_th": 0.005}
     expect_scheduler_steps = 7
 
-    val_interval_step = 5000
+    val_interval_step = 10000
 
     train_batch_size = 128
 
