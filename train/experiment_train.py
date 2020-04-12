@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 import time
 
 import torch
@@ -61,6 +60,8 @@ if __name__ == '__main__':
     train_dataloader = iter(train_dataloader)
     model.train()
 
+    print(model)
+
     train_loss = 0
     train_acc = 0
 
@@ -103,7 +104,7 @@ if __name__ == '__main__':
         if (total_step % opt.val_interval_step) == 0:
             training_utils.vox1test_cls_eval(model, opt, total_step, optimizer, train_log, tbx_writer)
             training_utils.vox1test_ASV_eval(model, device, opt, total_step, optimizer, train_log, tbx_writer)
-            training_utils.sdsvc_cls_eval(model, opt, total_step, optimizer, train_log, tbx_writer)
+            # training_utils.sdsvc_cls_eval(model, opt, total_step, optimizer, train_log, tbx_writer)
             training_utils.sdsvc_ASV_eval(model, device, opt, total_step, optimizer, train_log, tbx_writer)
 
             training_utils.vox1test_lr_decay_ctrl(opt, total_step, optimizer, scheduler, train_log)

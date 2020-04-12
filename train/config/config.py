@@ -3,10 +3,10 @@ import os
 
 class Config(object):
     train_name = "new_pipe_test_fullvoxonly"
-    description = 'new_pipe_test_fullvoxonly'
-    model = 'Xvector_SAP'
+    description = 'new_pipe_test_fullvoxonly 1L'
+    model = 'Xvector_SAP_1L'
     model_settings = {'in_feat': 30, 'emb_size': 512, 'class_num': 7323, \
-    's': 50, 'm': 0.2, 'anneal_steps': 10000}
+    's': 50, 'm': 0.2, 'anneal_steps': 40000}
     metric = 'AM_normfree_softmax_anneal_ce_head'
     max_step = 1000000
 
