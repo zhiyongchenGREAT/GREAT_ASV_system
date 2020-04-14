@@ -8,8 +8,7 @@ from read_data import *
 from config.config import *
 from model_bank import *
 
-
-if __name__ == '__main__':
+def main():
     opt = Config()
 
     os.environ['CUDA_VISIBLE_DEVICES'] = opt.gpu_id
@@ -31,8 +30,8 @@ if __name__ == '__main__':
 
     
     optimizer = torch.optim.SGD(model.parameters(), lr=opt.lr, momentum=opt.momentum, weight_decay=opt.weight_decay)    
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 2, eta_min=1e-4, last_epoch=-1)
-    # scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.1)
+    # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 2, eta_min=1e-4, last_epoch=-1)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.1)
 
     train_data = PickleDataSet_single(opt.train_list)
     train_dataloader = My_DataLoader(train_data, batch_size=opt.train_batch_size, shuffle=False, \
@@ -40,6 +39,13 @@ if __name__ == '__main__':
     batch_sampler=None, num_workers=opt.num_workers, collate_fn=None, \
     pin_memory=False, drop_last=False, timeout=0, \
     worker_init_fn=None, multiprocessing_context=None)
+ 
+    # train_data = PickleDataSet(opt.train_list)
+    # train_dataloader = My_DataLoader(train_data, batch_size=None, shuffle=False, \
+    # sampler=RandomSampler(train_data, replacement=True, num_samples=opt.max_step), \
+    # batch_sampler=None, num_workers=opt.num_workers, collate_fn=None, \
+    # pin_memory=False, drop_last=False, timeout=0, \
+    # worker_init_fn=None, multiprocessing_context=None)
 
     model, optimizer, scheduler, total_step = training_utils.resume_training(opt, model, optimizer, scheduler)
 
@@ -104,7 +110,7 @@ if __name__ == '__main__':
         if (total_step % opt.val_interval_step) == 0:
             training_utils.vox1test_cls_eval(model, opt, total_step, optimizer, train_log, tbx_writer)
             training_utils.vox1test_ASV_eval(model, device, opt, total_step, optimizer, train_log, tbx_writer)
-            # training_utils.sdsvc_cls_eval(model, opt, total_step, optimizer, train_log, tbx_writer)
+            training_utils.sdsvc_cls_eval(model, opt, total_step, optimizer, train_log, tbx_writer)
             training_utils.sdsvc_ASV_eval(model, device, opt, total_step, optimizer, train_log, tbx_writer)
 
             training_utils.vox1test_lr_decay_ctrl(opt, total_step, optimizer, scheduler, train_log)
@@ -121,3 +127,6 @@ if __name__ == '__main__':
     train_log.writelines([msg+'\n'])    
     train_log.close()
     tbx_writer.close()
+
+if __name__ == '__main__':
+    main()

@@ -2,9 +2,9 @@
 import os
 
 class Config(object):
-    train_name = "small mix 1L"
-    description = 'small mix 1L'
-    model = 'Xvector_SAP_1L'
+    train_name = "small mix SAP"
+    description = 'small mix SAP'
+    model = 'Xvector_SAP'
     model_settings = {'in_feat': 30, 'emb_size': 512, 'class_num': 1311, \
     's': 50, 'm': 0.2, 'anneal_steps': 1000}
     metric = 'AM_normfree_softmax_anneal_ce_head'

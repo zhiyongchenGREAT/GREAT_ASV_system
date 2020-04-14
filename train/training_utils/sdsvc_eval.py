@@ -10,6 +10,8 @@ from my_dataloader import *
 import score
 
 def sdsvc_cls_eval(model, opt, total_step, optimizer, train_log, tbx_writer):
+    if not hasattr(opt, 'sdsvc_val_list'):
+        return
 
     val_data = PickleDataSet(opt.sdsvc_val_list)
     val_dataloader = My_DataLoader(val_data, batch_size=None, shuffle=False, sampler=None,\

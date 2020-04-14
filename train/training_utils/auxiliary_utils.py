@@ -2,6 +2,11 @@
 def get_epoch_steps(opt, train_data):
     if str(type(train_data)).split('.')[-1][:-2] == 'PickleDataSet_single':
         expected_total_step_epoch = len(train_data) // opt.train_batch_size
+    elif str(type(train_data)).split('.')[-1][:-2] == 'PickleDataSet':
+        expected_total_step_epoch = len(train_data)
+    else:
+        raise NotImplementedError
+    
     return expected_total_step_epoch
 
 def standard_freq_logging(delta_time, total_step, train_loss, train_acc, optimizer, train_log, tbx_writer):

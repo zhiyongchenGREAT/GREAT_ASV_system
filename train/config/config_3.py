@@ -2,15 +2,15 @@
 import os
 
 class Config(object):
-    train_name = "small mix 1L"
-    description = 'small mix 1L'
+    train_name = "small target 1L"
+    description = 'small target 1L'
     model = 'Xvector_SAP_1L'
     model_settings = {'in_feat': 30, 'emb_size': 512, 'class_num': 1311, \
     's': 50, 'm': 0.2, 'anneal_steps': 1000}
     metric = 'AM_normfree_softmax_anneal_ce_head'
     max_step = 1000000
 
-    train_list = '/home/great10/sdsvc_small_100_dataset/mix_1311_smalltrain.csv'
+    train_list = '/home/great10/sdsvc_small_100_dataset/target_sdsvc_100_smalltrain.csv'
     vox_val_list = '/home/great10/sdsvc_small_100_dataset/source_vox_1211_smallval.csv'
     sdsvc_val_list = '/home/great10/sdsvc_small_100_dataset/target_sdsvc_100_smallval.csv'
     sdsvc_trial_list = '/home/great10/sdsvc_small_100_dataset/sdsvc_trial_list.csv'

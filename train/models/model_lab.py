@@ -6,6 +6,7 @@ import torch.nn as nn
 import numpy as np
 import models
 from torch.autograd import Function
+import torch.nn.functional as F
 
 
 class ReverseLayerF(Function):
@@ -111,7 +112,7 @@ class AMSoftmax_normfree(nn.Module):
         self.out_features = out_features
         self.s = s
         self.m = m
-        self.weight = Parameter(torch.FloatTensor(out_features, in_features))
+        self.weight = nn.Parameter(torch.FloatTensor(out_features, in_features))
         nn.init.xavier_uniform_(self.weight)
 
     def forward(self, input, label, s, m):
