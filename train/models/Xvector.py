@@ -1,10 +1,12 @@
 import os
 import sys
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + '/../')
+sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
+from sync_batchnorm import *
 
 class Xvector_SAP(torch.nn.Module):
     def __init__(self, feat_dim, emb_dim):
@@ -504,6 +506,37 @@ class AM_normfree_softmax_anneal_ce_head(nn.Module):
         self.model_settings = model_settings
         
         self.backbone = nn.DataParallel(backbone)
+        self.metrics = AMSoftmax_normfree(in_features=model_settings['emb_size'], out_features=model_settings['class_num'], s=model_settings['s'], m=model_settings['m'])
+        self.loss = torch.nn.CrossEntropyLoss()
+    
+    def forward(self, x, y, mod):
+        if mod == 'train':
+            self.iter += 1.0
+            m = min(self.max_m, (self.iter / self.th_step) * self.model_settings['m'])
+        else:
+            m = 0.0
+
+        emb1, emb2 = self.backbone(x, y)
+        logits, nm_W = self.metrics(emb2, y, s=self.model_settings['s'], m=m)
+        loss = self.loss(logits, y)
+
+        pred = logits.data.cpu().numpy()
+        pred = np.argmax(pred, axis=1)
+        label = y.data.cpu().numpy()
+        acc = np.mean((pred == label).astype(int))
+
+        return loss, logits, emb2, acc, 0.0
+
+class AM_normfree_softmax_anneal_ce_SycnBN(nn.Module):
+    def __init__(self, backbone, model_settings):
+        super(AM_normfree_softmax_anneal_ce_SycnBN, self).__init__()
+        self.th_step = model_settings['anneal_steps']
+        self.iter = 0.0
+        self.max_m = model_settings['m']
+        self.model_settings = model_settings
+        
+        backbone = convert_model(backbone)
+        self.backbone = DataParallelWithCallback(backbone)
         self.metrics = AMSoftmax_normfree(in_features=model_settings['emb_size'], out_features=model_settings['class_num'], s=model_settings['s'], m=model_settings['m'])
         self.loss = torch.nn.CrossEntropyLoss()
     

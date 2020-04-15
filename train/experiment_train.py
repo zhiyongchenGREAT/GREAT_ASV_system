@@ -1,15 +1,17 @@
 import time
+import importlib
 
 import torch
 import training_utils
 from torch.utils.data import *
 from my_dataloader import *
 from read_data import *
-from config.config import *
+import config.config as config
+importlib.reload(config)
 from model_bank import *
 
 def main():
-    opt = Config()
+    opt = config.Config()
 
     os.environ['CUDA_VISIBLE_DEVICES'] = opt.gpu_id
     torch.backends.cudnn.benchmark = opt.cudnn_benchmark
