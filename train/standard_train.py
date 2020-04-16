@@ -1,17 +1,17 @@
-#!/usr/bin/env python
 import time
+import importlib
 
 import torch
-import utils
+import training_utils
 from torch.utils.data import *
 from my_dataloader import *
 from read_data import *
-from config.config import *
+import config.config as config
+importlib.reload(config)
 from model_bank import *
 
-
-if __name__ == '__main__':
-    opt = Config()
+def main():
+    opt = config.Config()
 
     os.environ['CUDA_VISIBLE_DEVICES'] = opt.gpu_id
     torch.backends.cudnn.benchmark = opt.cudnn_benchmark
@@ -22,7 +22,7 @@ if __name__ == '__main__':
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    model = get_model(opt.model, opt.metric, 0, opt.model_settings, opt)
+    model = get_model(opt.model, opt.metric, opt.model_settings, opt)
 
     if torch.cuda.is_available():
         print("Data Parallel on ", torch.cuda.device_count(), "GPUs!")
@@ -32,25 +32,33 @@ if __name__ == '__main__':
 
     
     optimizer = torch.optim.SGD(model.parameters(), lr=opt.lr, momentum=opt.momentum, weight_decay=opt.weight_decay)    
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 2, eta_min=1e-4, last_epoch=-1)
+    # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 2, eta_min=1e-4, last_epoch=-1)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.1)
 
     train_data = PickleDataSet_single(opt.train_list)
     train_dataloader = My_DataLoader(train_data, batch_size=opt.train_batch_size, shuffle=False, \
-    sampler=RandomSampler(train_data, replacement=True, num_samples=opt.max_step), \
+    sampler=RandomSampler(train_data, replacement=True, num_samples=opt.max_step*opt.train_batch_size), \
     batch_sampler=None, num_workers=opt.num_workers, collate_fn=None, \
     pin_memory=False, drop_last=False, timeout=0, \
     worker_init_fn=None, multiprocessing_context=None)
+ 
+    # train_data = PickleDataSet(opt.train_list)
+    # train_dataloader = My_DataLoader(train_data, batch_size=None, shuffle=False, \
+    # sampler=RandomSampler(train_data, replacement=True, num_samples=opt.max_step), \
+    # batch_sampler=None, num_workers=opt.num_workers, collate_fn=None, \
+    # pin_memory=False, drop_last=False, timeout=0, \
+    # worker_init_fn=None, multiprocessing_context=None)
 
-    model, optimizer, scheduler, total_step = resume_training(opt, model, optimizer, scheduler)
+    model, optimizer, scheduler, total_step = training_utils.resume_training(opt, model, optimizer, scheduler)
 
-    opt = dir_init(opt)
+    opt = training_utils.dir_init(opt)
 
-    tbx_writer = tensorboard_init(opt)
+    tbx_writer = training_utils.tensorboard_init(opt)
 
     model = model.to(device)       
 
     timing_point = time.time()
-    expected_total_step_epoch = get_epoch_steps(opt, train_data)
+    expected_total_step_epoch = training_utils.get_epoch_steps(opt, train_data)
 
     train_log = open(opt.train_log_path, 'w')
     msg = 'Total_step_per_E: '+str(expected_total_step_epoch)
@@ -59,6 +67,8 @@ if __name__ == '__main__':
 
     train_dataloader = iter(train_dataloader)
     model.train()
+
+    print(model)
 
     train_loss = 0
     train_acc = 0
@@ -89,36 +99,36 @@ if __name__ == '__main__':
 
         total_step += 1
 
-        if total_step in opt.lr_decay_step:
-            scheduler.step() 
-
-        if ((count+1) % opt.print_freq) == 0:
+        if (total_step % opt.print_freq) == 0:
             delta_time = time.time() - timing_point
             timing_point = time.time()
 
-            standard_freq_logging(delta_time, total_step, train_loss, train_acc, optimizer, train_log, tbx_writer)
+            training_utils.standard_freq_logging(delta_time, total_step, train_loss, train_acc, optimizer, train_log, tbx_writer)
 
             train_loss = 0
             train_acc = 0
         
         
-        if ((count+1) % opt.val_interval_step) == 0:
-            vox1test_cls_eval(model, opt, total_step, optimizer, train_log, tbx_writer)
-            vox1test_ASV_eval(model, opt, total_step, optimizer, train_log, tbx_writer)
-            sdsvc_cls_eval(model, opt, total_step, optimizer, train_log, tbx_writer)
-            sdsvc_ASV_eval(model, opt, total_step, optimizer, train_log, tbx_writer)
+        if (total_step % opt.val_interval_step) == 0:
+            training_utils.vox1test_cls_eval(model, opt, total_step, optimizer, train_log, tbx_writer)
+            training_utils.vox1test_ASV_eval(model, device, opt, total_step, optimizer, train_log, tbx_writer)
+            training_utils.sdsvc_cls_eval(model, opt, total_step, optimizer, train_log, tbx_writer)
+            training_utils.sdsvc_ASV_eval(model, device, opt, total_step, optimizer, train_log, tbx_writer)
 
-            vox1test_lr_decay_ctrl(opt, total_step, optimizer, scheduler, train_log)
+            training_utils.vox1test_lr_decay_ctrl(opt, total_step, optimizer, scheduler, train_log)
 
-            vox1test_metric_saver(model, opt, total_step, optimizer, scheduler, train_log)
+            training_utils.vox1test_metric_saver(model, opt, total_step, optimizer, scheduler, train_log)
 
-            if stop_ctrl_std(opt, scheduler): break
+            if training_utils.stop_ctrl_std(opt, scheduler): break
 
             torch.backends.cudnn.benchmark = opt.cudnn_benchmark
             model.train()
     
-    msg = "Finish training "+opt.train_name
+    msg = "Finish training "+opt.train_name+" with Step: "+ str(total_step)
     print(msg)
     train_log.writelines([msg+'\n'])    
     train_log.close()
     tbx_writer.close()
+
+if __name__ == '__main__':
+    main()

@@ -619,6 +619,6 @@ class Linear_softmax_ce_head(nn.Module):
         label = y.data.cpu().numpy()        
         acc = np.mean((pred == label).astype(int))
 
-        return loss, logits, emb1, acc, 0.0
+        return loss, logits, emb2, acc, 0.0
 
 
