@@ -23,7 +23,7 @@ def main():
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    model = model_lab.DANN_tester_AL_w_SAP(opt.model_settings)
+    model = model_lab.DANN_tester_AL_w(opt.model_settings)
 
     if torch.cuda.is_available():
         print("Data Parallel on ", torch.cuda.device_count(), "GPUs!")
@@ -98,22 +98,23 @@ def main():
         train_acc_d += acc_d/opt.print_freq
 
 
-        opt_e.zero_grad()
-        opt_c.zero_grad()
-        opt_d.zero_grad()
-        beta = min((total_step / 10000)*0.2, 0.2)*beta_scale
+        if ((total_step+1) % 3) != 0:
+            opt_e.zero_grad()
+            opt_c.zero_grad()
+            opt_d.zero_grad()
+            beta = min((total_step / 10000) * 0.2, 0.2)*beta_scale
 
-        (loss_c + beta*loss_al).backward(retain_graph=True)
-        opt_c.step()
-        opt_e.step()
-            
-        opt_e.zero_grad()
-        opt_c.zero_grad()
-        opt_d.zero_grad()
-        gamma = min((total_step / 10000)*0.2, 0.2)*gamma_scale
+            (loss_c + beta*loss_al).backward(retain_graph=True)
+            opt_c.step()
+            opt_e.step()
+        else:
+            opt_e.zero_grad()
+            opt_c.zero_grad()
+            opt_d.zero_grad()
+            gamma = min((total_step / 10000) * 0.2, 0.2)*gamma_scale
 
-        (gamma*loss_d).backward()
-        opt_d.step() 
+            (gamma*loss_d).backward()
+            opt_d.step() 
 
         total_step += 1
 

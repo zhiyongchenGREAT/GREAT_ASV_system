@@ -2,8 +2,8 @@
 import os
 print(1)
 class Config(object):
-    train_name = "small mix 1L AL weight16"
-    description = 'small mix 1L AL weight step every, no ctrl gamma, gamma 0.2 beta 0.2 fixed, with D class weight 6, long dur'
+    train_name = "small mix 1L AL weight15"
+    description = 'small mix 1L AL weight step every, no ctrl gamma, gamma 1 beta 1 fixed, with D class weight 6, long dur'
     model = ''
     model_settings = {'in_feat': 30, 'emb_size': 512, 'class_num': 1311, \
     's': 50, 'm': 0.2, 'anneal_steps': 1000, 'weight': 6}
