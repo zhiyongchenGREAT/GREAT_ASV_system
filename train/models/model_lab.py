@@ -514,7 +514,7 @@ class DANN_tester_AL_w(nn.Module):
 
 class DANN_tester_AL_w_changeadv(nn.Module):
     def __init__(self, model_settings):
-        super(DANN_tester_AL_w, self).__init__()
+        super(DANN_tester_AL_w_changeadv, self).__init__()
         self.th_step = model_settings['anneal_steps']
         self.iter = 0.0
         self.max_m = model_settings['m']
@@ -533,6 +533,9 @@ class DANN_tester_AL_w_changeadv(nn.Module):
         self.layer_d2.add_module('linear', nn.Linear(model_settings['emb_size'], 2))
 
         self.loss = torch.nn.CrossEntropyLoss(reduction='none')
+
+        self.logsft = torch.nn.LogSoftmax(dim=1)
+        # self.negloss = torch.nn.NLLLoss()
     
     def get_optimizer(self):
         opt_e = torch.optim.SGD(self.backbone.parameters(), lr=1e-2, momentum=0.9, weight_decay=5e-4)
@@ -566,7 +569,10 @@ class DANN_tester_AL_w_changeadv(nn.Module):
         loss_d = torch.mean(loss_d)
 
         # loss_al = self.loss(logits_d, torch.zeros(y_d.size()).long().cuda())
-        loss_al = self.loss(logits_d, 1-y_d) * weight
+        # loss_al = self.loss(logits_d, 1-y_d) * weight
+        # loss_al = torch.mean(loss_al)
+
+        loss_al = -0.5 * self.logsft(logits_d)
         loss_al = torch.mean(loss_al)
 
         if ((self.iter+1) % 50) == 0:
