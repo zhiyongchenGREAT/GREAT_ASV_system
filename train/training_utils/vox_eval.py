@@ -59,8 +59,11 @@ def vox1test_cls_eval_AL(model, opt, total_step, optimizer, train_log, tbx_write
     worker_init_fn=None, multiprocessing_context=None)   
     
     model.eval()
-    val_loss = 0.0
-    val_acc = 0.0
+    val_loss_c = 0.0
+    val_loss_d = 0.0
+    val_loss_al = 0.0
+
+    val_acc_c = 0.0
     val_acc_d = 0.0 
     for val_count, (val_x, val_y) in enumerate(val_dataloader):
 
@@ -68,24 +71,33 @@ def vox1test_cls_eval_AL(model, opt, total_step, optimizer, train_log, tbx_write
         val_y = val_y.cuda(non_blocking=True)
         
         with torch.no_grad():
-            loss, predict, emb, acc, acc_d = model(val_x, val_y, mod='eval')
+            [loss_c, loss_d, loss_al], _, _, [acc_c, acc_d], _ = model(val_x, val_y, mod='eval')
         
-        val_loss += loss[0].item()
-        val_acc += acc
+        val_loss_c += loss_c.item()
+        val_loss_d += loss_d.item()
+        val_loss_al += loss_al.item()
+
+        val_acc_c += acc_c
         val_acc_d += acc_d                   
 
-    val_loss = val_loss / (val_count + 1)  
-    val_acc = val_acc / (val_count + 1)
+    val_loss_c = val_loss_c / (val_count + 1)  
+    val_loss_d = val_loss_d / (val_count + 1)
+    val_loss_al = val_loss_al / (val_count + 1)
+
+    val_acc_c = val_acc_c / (val_count + 1)
     val_acc_d = val_acc_d / (val_count + 1)
 
-    tbx_writer.add_scalar('vox1test_cls_eval_loss', val_loss, total_step)
-    tbx_writer.add_scalar('vox1test_cls_eval_acc', val_acc, total_step)
+    tbx_writer.add_scalar('vox1test_cls_eval_loss', val_loss_c, total_step)
+    tbx_writer.add_scalar('vox1test_cls_eval_loss_d', val_loss_d, total_step)
+    tbx_writer.add_scalar('vox1test_cls_eval_loss_al', val_loss_al, total_step)
+
+    tbx_writer.add_scalar('vox1test_cls_eval_acc', val_acc_c, total_step)
     tbx_writer.add_scalar('vox1test_cls_eval_acc_d', val_acc_d, total_step)
 
     current_lr = optimizer.param_groups[0]['lr']
 
     msg = "vox1test_cls_eval Step: {:} Valcount: {:} ValLoss: {:.4f} ValAcc: {:.4f} ValAcc_d: {:.4f} Lr: {:.5f}"\
-    .format(total_step, (val_count + 1), val_loss, val_acc, val_acc_d, current_lr)
+    .format(total_step, (val_count + 1), val_loss_c, val_acc_c, val_acc_d, current_lr)
     print(msg)
     train_log.writelines([msg+'\n']) 
     with open(opt.val_log_path, 'a') as f:

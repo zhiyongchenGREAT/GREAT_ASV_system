@@ -114,7 +114,7 @@ def main():
         opt_e.zero_grad()
         opt_c.zero_grad()
         opt_d.zero_grad()
-        gamma = min((total_step / 10000)*1.0, 1.0)*gamma_scale
+        gamma = min((total_step / 10000)*0.5, 0.5)*gamma_scale
 
         (gamma*loss_d).backward()
         opt_d.step() 

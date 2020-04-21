@@ -151,9 +151,10 @@ def main():
             training_utils.sdsvc_cls_eval_AL(model, opt, total_step, opt_e, train_log, tbx_writer)
             training_utils.sdsvc_ASV_eval(model, device, opt, total_step, opt_e, train_log, tbx_writer)
 
-            training_utils.vox1test_lr_decay_ctrl_AL(opt, total_step, opt_e, [scheduler_e, scheduler_c, scheduler_d], train_log)
+            training_utils.sdsvc_lr_decay_ctrl_AL(opt, total_step, opt_e, [scheduler_e, scheduler_c, scheduler_d], train_log)
 
             training_utils.vox1test_metric_saver(model, opt, total_step, opt_e, scheduler_e, train_log)
+            training_utils.sdsvc_metric_saver(model, opt, total_step, opt_e, scheduler_e, train_log)
 
             if training_utils.stop_ctrl_std(opt, scheduler_e): break
 

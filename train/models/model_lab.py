@@ -549,7 +549,7 @@ class DANN_tester_AL_w_changeadv(nn.Module):
     
     def forward(self, x, y, mod):
         y_d = (y >= 1211).long()
-        weight = y_d*(self.model_settings['weight']-1) + 1
+        weight = (y_d*(self.model_settings['weight']-1) + 1).float()
 
         if mod == 'train':
             self.iter += 1.0
@@ -573,10 +573,11 @@ class DANN_tester_AL_w_changeadv(nn.Module):
         # loss_al = torch.mean(loss_al)
 
         loss_al = -0.5 * self.logsft(logits_d)
+        loss_al = loss_al * weight.unsqueeze(1)
         loss_al = torch.mean(loss_al)
 
-        if ((self.iter+1) % 50) == 0:
-            print(loss_c.item(), loss_d.item())
+        # if ((self.iter+1) % 50) == 0:
+        #     print(loss_c.item(), loss_d.item())
 
         pred = logits.data.cpu().numpy()
         pred = np.argmax(pred, axis=1)
@@ -588,7 +589,7 @@ class DANN_tester_AL_w_changeadv(nn.Module):
         label_d = y_d.data.cpu().numpy()
         acc_d = np.mean((pred_d == label_d).astype(int))
 
-        return [loss_c, loss_d, loss_al], logits, emb2, acc, acc_d
+        return [loss_c, loss_d, loss_al], logits, emb2, [acc, acc_d], None
 
 class DANN_tester_AL_w_SAP(nn.Module):
     def __init__(self, model_settings):
