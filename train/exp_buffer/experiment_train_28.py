@@ -23,7 +23,7 @@ def main():
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    model = model_lab.DANN_tester_AL_FOCAL_REBL(opt.model_settings)
+    model = model_lab.DANN_tester_AL_w_changeadv_full(opt.model_settings)
 
     if torch.cuda.is_available():
         print("Data Parallel on ", torch.cuda.device_count(), "GPUs!")
@@ -32,12 +32,16 @@ def main():
         sys.exit(1)
 
     
-    optimizer = torch.optim.SGD(model.parameters(), lr=opt.lr, momentum=opt.momentum, weight_decay=opt.weight_decay)
+    # optimizer = torch.optim.SGD(model.parameters(), lr=opt.lr, momentum=opt.momentum, weight_decay=opt.weight_decay)
     opt_e, opt_c, opt_d = model.get_optimizer()
 
-    scheduler_e = torch.optim.lr_scheduler.StepLR(opt_e, step_size=1, gamma=0.1)
-    scheduler_c = torch.optim.lr_scheduler.StepLR(opt_c, step_size=1, gamma=0.1)
-    scheduler_d = torch.optim.lr_scheduler.StepLR(opt_d, step_size=1, gamma=0.1)
+    # scheduler_e = torch.optim.lr_scheduler.StepLR(opt_e, step_size=1, gamma=0.1)
+    # scheduler_c = torch.optim.lr_scheduler.StepLR(opt_c, step_size=1, gamma=0.1)
+    # scheduler_d = torch.optim.lr_scheduler.StepLR(opt_d, step_size=1, gamma=0.1)
+
+    scheduler_e = torch.optim.lr_scheduler.CosineAnnealingLR(opt_e, 2, eta_min=1e-4, last_epoch=-1)
+    scheduler_c = torch.optim.lr_scheduler.CosineAnnealingLR(opt_c, 2, eta_min=1e-4, last_epoch=-1)
+    scheduler_d = torch.optim.lr_scheduler.CosineAnnealingLR(opt_d, 2, eta_min=1e-4, last_epoch=-1)
 
     train_data = PickleDataSet_single(opt.train_list)
     train_dataloader = My_DataLoader(train_data, batch_size=opt.train_batch_size, shuffle=False, \
@@ -47,7 +51,7 @@ def main():
     worker_init_fn=None, multiprocessing_context=None)
 
 
-    model, optimizer, scheduler, total_step = training_utils.resume_training(opt, model, opt_e, scheduler_e)
+    model, _, _, total_step = training_utils.resume_training(opt, model, opt_e, scheduler_e)
 
     opt = training_utils.dir_init(opt)
 
@@ -105,7 +109,7 @@ def main():
         opt_e.zero_grad()
         opt_c.zero_grad()
         opt_d.zero_grad()
-        beta = min((total_step / 10000)*0.05, 0.05)*beta_scale
+        beta = min((total_step / 50000)*0.1, 0.1)*beta_scale
 
         (loss_c + beta*loss_al).backward(retain_graph=True)
         opt_c.step()
@@ -114,7 +118,7 @@ def main():
         opt_e.zero_grad()
         opt_c.zero_grad()
         opt_d.zero_grad()
-        gamma = min((total_step / 10000)*0.1, 0.1)*gamma_scale
+        gamma = min((total_step / 50000)*0.1, 0.1)*gamma_scale
 
         (gamma*loss_d).backward()
         opt_d.step() 

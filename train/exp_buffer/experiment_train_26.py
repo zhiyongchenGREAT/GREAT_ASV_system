@@ -23,7 +23,7 @@ def main():
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    model = model_lab.DANN_tester_AL_FOCAL_REBL(opt.model_settings)
+    model = model_lab.DANN_tester_AL_FOCAL(opt.model_settings)
 
     if torch.cuda.is_available():
         print("Data Parallel on ", torch.cuda.device_count(), "GPUs!")

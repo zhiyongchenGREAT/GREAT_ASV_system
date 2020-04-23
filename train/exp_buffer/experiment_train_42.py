@@ -105,7 +105,7 @@ def main():
         opt_e.zero_grad()
         opt_c.zero_grad()
         opt_d.zero_grad()
-        beta = min((total_step / 10000)*0.05, 0.05)*beta_scale
+        beta = min((total_step / 10000)*0.5, 0.5)*beta_scale
 
         (loss_c + beta*loss_al).backward(retain_graph=True)
         opt_c.step()

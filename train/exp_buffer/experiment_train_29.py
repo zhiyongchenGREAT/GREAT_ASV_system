@@ -23,7 +23,7 @@ def main():
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    model = model_lab.DANN_tester_AL_FOCAL_REBL(opt.model_settings)
+    model = model_lab.DANN_tester_AL_FOCAL(opt.model_settings)
 
     if torch.cuda.is_available():
         print("Data Parallel on ", torch.cuda.device_count(), "GPUs!")
@@ -105,7 +105,7 @@ def main():
         opt_e.zero_grad()
         opt_c.zero_grad()
         opt_d.zero_grad()
-        beta = min((total_step / 10000)*0.05, 0.05)*beta_scale
+        beta = min((total_step / 10000)*0.025, 0.025)*beta_scale
 
         (loss_c + beta*loss_al).backward(retain_graph=True)
         opt_c.step()
@@ -125,7 +125,7 @@ def main():
             delta_time = time.time() - timing_point
             timing_point = time.time()
 
-            training_utils.da_freq_logging(delta_time, total_step, [train_loss_c, train_loss_d, train_loss_al], \
+            training_utils.da_freq_logging(delta_time, total_step, [train_loss_c, train_loss_d, 0.25*train_loss_al], \
             [train_acc_c, train_acc_d], opt_e, train_log, tbx_writer)
 
             msg = "ACC_d: "+str(train_acc_d)+" Beta: "+str(beta)+" Gamma: "+str(gamma)
