@@ -2,12 +2,13 @@
 import os
 print(1)
 class Config(object):
-    train_name = "full mix ResEtdnn-plus"
-    description = 'full mix ResEtdnn-plus, change to minc lr decay base on vox'
-    model = 'Standard_ETDNN_plus'
+    train_name = "full mix 1L FOCAL-ALDA-Balanced"
+    description = 'full mix 1L AL Focal step every, no ctrl gamma, gamma 0.1 beta 0.05 fixed, with D class weight 15 rebalanced FOCAL, \
+    ch adv and rebanlance adv class, change to minc lr decay base on vox, f_d 0 f_al 0'
+    model = ''
     model_settings = {'in_feat': 30, 'emb_size': 512, 'class_num': 7811, \
-    's': 50, 'm': 0.2, 'anneal_steps': 10000}
-    metric = 'AM_normfree_softmax_anneal_ce_head'
+    's': 50, 'm': 0.2, 'anneal_steps': 10000, 'weight': 15, 'focal_d_gamma': 0, 'focal_al_gamma': 0}
+    metric = ''
     max_step = 1000000
 
     # train_list = '/home/great10/sdsvc_small_100_dataset/mix_1311_smalltrain.csv'
@@ -40,7 +41,7 @@ class Config(object):
 
     train_batch_size = 128
 
-    gpu_id = "4"
+    gpu_id = "0, 1"
     num_workers = 32  # how many workers for loading data
     print_freq = 50  # print info every N batch
 

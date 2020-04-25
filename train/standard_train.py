@@ -111,6 +111,7 @@ def main():
             training_utils.vox1test_lr_decay_ctrl(opt, total_step, optimizer, scheduler, train_log)
 
             training_utils.vox1test_metric_saver(model, opt, total_step, optimizer, scheduler, train_log)
+            training_utils.sdsvc_metric_saver(model, opt, total_step, opt_e, scheduler_e, train_log)
 
             if training_utils.stop_ctrl_std(opt, scheduler): break
 
