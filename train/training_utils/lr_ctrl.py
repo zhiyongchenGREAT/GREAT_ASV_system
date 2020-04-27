@@ -212,3 +212,58 @@ def sdsvc_lr_decay_ctrl_AL(opt, total_step, optimizer, scheduler, train_log):
     .format(total_step, scheduler_step, current_lr, total_step, metric_value, 0)
     with open(cur_anchor_log, 'w') as f:
         f.writelines([msg+'\n']) 
+
+
+def epoch_lr_decay_ctrl_AL(expected_total_step_epoch, opt, total_step, optimizer, scheduler, train_log):   
+    current_lr = optimizer.param_groups[0]['lr']
+    scheduler_step = scheduler[0].state_dict()['_step_count']
+    cur_anchor_log = os.path.join(opt.lr_ctrl_path, str(scheduler_step)+".log")
+
+    if os.path.isfile(cur_anchor_log):
+
+        if total_step > scheduler_step*expected_total_step_epoch:
+            scheduler[0].step()
+            scheduler[1].step()
+            scheduler[2].step()
+            assert scheduler[0].state_dict()['_step_count'] == \
+            scheduler[1].state_dict()['_step_count'] == \
+            scheduler[2].state_dict()['_step_count']   
+
+            new_lr = optimizer.param_groups[0]['lr']
+            new_scheduler_step = scheduler[0].state_dict()['_step_count']
+            msg = "Step: {:} S_Step: {:} Lr: {:.5f} -> NewLr: {:.5f} New_S_Step: {:}".format(total_step, scheduler_step, \
+            current_lr, new_lr, new_scheduler_step)
+            with open(cur_anchor_log, 'a') as f:
+                f.writelines([msg+'\n'])
+            print(msg)
+            train_log.writelines([msg+'\n'])
+            return
+
+    msg = "Step: {:} S_Step: {:} Lr: {:.5f}"\
+    .format(total_step, scheduler_step, current_lr)
+    with open(cur_anchor_log, 'a') as f:
+        f.writelines([msg+'\n'])
+
+def epoch_lr_decay_ctrl(expected_total_step_epoch, opt, total_step, optimizer, scheduler, train_log):   
+    current_lr = optimizer.param_groups[0]['lr']
+    scheduler_step = scheduler.state_dict()['_step_count']
+    cur_anchor_log = os.path.join(opt.lr_ctrl_path, str(scheduler_step)+".log")
+
+    if os.path.isfile(cur_anchor_log):
+
+        if total_step > scheduler_step*expected_total_step_epoch:
+            scheduler.step()
+            new_lr = optimizer.param_groups[0]['lr']
+            new_scheduler_step = scheduler.state_dict()['_step_count']
+            msg = "Step: {:} S_Step: {:} Lr: {:.5f} -> NewLr: {:.5f} New_S_Step: {:}".format(total_step, scheduler_step, \
+            current_lr, new_lr, new_scheduler_step)
+            with open(cur_anchor_log, 'a') as f:
+                f.writelines([msg+'\n'])
+            print(msg)
+            train_log.writelines([msg+'\n'])
+            return
+
+    msg = "Step: {:} S_Step: {:} Lr: {:.5f}"\
+    .format(total_step, scheduler_step, current_lr)
+    with open(cur_anchor_log, 'a') as f:
+        f.writelines([msg+'\n'])

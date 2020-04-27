@@ -2,8 +2,8 @@
 import os
 print(1)
 class Config(object):
-    train_name = "small mix 1L Reblanced DANN1"
-    description = 'small mix 1L Reblanced DANN, beta 0.025 fixed, with D class weight 12 rebalanced FOCAL, \
+    train_name = "small mix 1L Reblanced DANN3"
+    description = 'small mix 1L Reblanced DANN, beta 0.1 fixed, with D class weight 12 rebalanced FOCAL, \
     long dur, change to minc lr decay base on vox, f_d 0 f_al 0'
     model = ''
     model_settings = {'in_feat': 30, 'emb_size': 512, 'class_num': 1311, \
