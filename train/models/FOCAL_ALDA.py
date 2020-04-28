@@ -249,8 +249,8 @@ class FOCAL_ALDA_2DO_OPT(nn.Module):
     def forward(self, x, y, mod):
         y_d = (y >= self.model_settings['source_class_num']).long()
 
-        weight = (y_d*(self.model_settings['weight']-1) + 1).unsqueeze(1).float()
-        weight = (self.model_settings['weight']+1) / (2.0 * (self.model_settings['weight'] +1  - weight))
+        weight = (y_d.float()*(self.model_settings['weight']-1) + 1).unsqueeze(1).float()
+        weight = (self.model_settings['weight']+1) / (2.0 * (self.model_settings['weight'] + 1 - weight))
 
         if mod == 'train':
             self.iter += 1.0

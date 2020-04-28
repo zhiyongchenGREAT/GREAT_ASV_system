@@ -7,7 +7,7 @@ import importlib
 CONFIG_DIR = './config'
 EXP_BUFFER = './exp_buffer'
 
-for i in range(64, 68):    
+for i in range(74, 77):    
     try:
         shutil.copy(os.path.join(EXP_BUFFER, 'config_'+str(i+1)+'.py'), os.path.join(CONFIG_DIR, 'config.py'))
         shutil.copy(os.path.join(EXP_BUFFER, 'experiment_train_'+str(i+1)+'.py'), os.path.join('./', 'experiment_train.py'))
@@ -17,4 +17,4 @@ for i in range(64, 68):
     except Exception:
         pass
 
-GPU_o.main("3, 4", 1, 200)
+GPU_o.main("4, 3", 1, 200)

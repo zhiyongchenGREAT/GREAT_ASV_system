@@ -2,12 +2,12 @@
 import os
 print(1)
 class Config(object):
-    train_name = "small 488 mix 1L FOCAL_ALDA_OPT2"
-    description = 'small 488 mix 1L FOCAL_ALDA_OPT rerun, gamma 0.1 beta 0.1 fixed, class weight 1, \
+    train_name = "small 488 mix 1L FOCAL_ALDA_OPT1_2"
+    description = 'small 488 mix 1L FOCAL_ALDA_OPT rerun, gamma 0.1 beta 0.05 fixed, class weight 2.5, \
     long dur val inter 2000, minc lr decay base on vox, f_d 0 f_al 0'
     model = ''
     model_settings = {'in_feat': 30, 'emb_size': 512, 'class_num': 1699, 'source_class_num': 1211, \
-    's': 50, 'm': 0.2, 'anneal_steps': 1000, 'weight': 1, 'focal_d_gamma': 0, 'focal_al_gamma': 0}
+    's': 50, 'm': 0.2, 'anneal_steps': 1000, 'weight': 2.5, 'focal_d_gamma': 0, 'focal_al_gamma': 0}
     metric = ''
     max_step = 1000000
 

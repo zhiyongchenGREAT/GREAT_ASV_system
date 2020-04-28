@@ -2,12 +2,12 @@
 import os
 print(1)
 class Config(object):
-    train_name = "small 488 mix 1L FOCAL_ALDA_OPT2"
-    description = 'small 488 mix 1L FOCAL_ALDA_OPT rerun, gamma 0.1 beta 0.1 fixed, class weight 1, \
-    long dur val inter 2000, minc lr decay base on vox, f_d 0 f_al 0'
+    train_name = "small 488 mix 1L FOCAL_ALDA_OPT1_2_re"
+    description = 'small 488 mix 1L FOCAL_ALDA_OPT rerun, gamma 0.1 beta 0.05 fixed, class weight 2.5, \
+    long dur val inter 2500, minc lr decay base on vox, f_d 0 f_al 0'
     model = ''
     model_settings = {'in_feat': 30, 'emb_size': 512, 'class_num': 1699, 'source_class_num': 1211, \
-    's': 50, 'm': 0.2, 'anneal_steps': 1000, 'weight': 1, 'focal_d_gamma': 0, 'focal_al_gamma': 0}
+    's': 50, 'm': 0.2, 'anneal_steps': 1000, 'weight': 2.5, 'focal_d_gamma': 0, 'focal_al_gamma': 0}
     metric = ''
     max_step = 1000000
 
@@ -26,7 +26,7 @@ class Config(object):
     lr_ctrl = {"metric": "MINC", "Dur": 5, "sig_th": 0.005}
     expect_scheduler_steps = 2
 
-    val_interval_step = 2000
+    val_interval_step = 2500
 
     train_batch_size = 128
 

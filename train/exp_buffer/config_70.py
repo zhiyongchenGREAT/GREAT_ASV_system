@@ -2,13 +2,12 @@
 import os
 print(1)
 class Config(object):
-    train_name = "small 488 mix 1L FOCAL_ALDA_OPT2"
-    description = 'small 488 mix 1L FOCAL_ALDA_OPT rerun, gamma 0.1 beta 0.1 fixed, class weight 1, \
-    long dur val inter 2000, minc lr decay base on vox, f_d 0 f_al 0'
-    model = ''
-    model_settings = {'in_feat': 30, 'emb_size': 512, 'class_num': 1699, 'source_class_num': 1211, \
-    's': 50, 'm': 0.2, 'anneal_steps': 1000, 'weight': 1, 'focal_d_gamma': 0, 'focal_al_gamma': 0}
-    metric = ''
+    train_name = "small 488 mix 1L"
+    description = 'small 488 mix 1L'
+    model = 'Xvector_SAP_1L'
+    model_settings = {'in_feat': 30, 'emb_size': 512, 'class_num': 1699, \
+    's': 50, 'm': 0.2, 'anneal_steps': 1000}
+    metric = 'AM_normfree_softmax_anneal_ce_head'
     max_step = 1000000
 
     train_list = '/home/great10/sdsvc_small_488_dataset/mix_1699_smalltrain.csv'
@@ -26,7 +25,7 @@ class Config(object):
     lr_ctrl = {"metric": "MINC", "Dur": 5, "sig_th": 0.005}
     expect_scheduler_steps = 2
 
-    val_interval_step = 2000
+    val_interval_step = 1000
 
     train_batch_size = 128
 
