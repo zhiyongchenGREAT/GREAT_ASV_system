@@ -551,7 +551,11 @@ class DANN_tester_AL_w_changeadv(nn.Module):
         # emb_r = self.reverse_l.apply(emb2, self.alpha_reverse)
         emb_d1 = self.layer_d1(emb2)
         logits_d = self.layer_d2(emb_d1)
-        loss_d = self.loss(logits_d, y_d) * weight
+
+        emb_d1_d = self.layer_d1(emb2.detach())
+        logits_d_d = self.layer_d2(emb_d1_d)       
+        
+        loss_d = self.loss(logits_d_d, y_d) * weight
         loss_d = torch.mean(loss_d)
 
         # loss_al = self.loss(logits_d, torch.zeros(y_d.size()).long().cuda())

@@ -7,7 +7,7 @@ import importlib
 CONFIG_DIR = './config'
 EXP_BUFFER = './exp_buffer'
 
-for i in range(74, 77):    
+for i in range(94, 95):    
     try:
         shutil.copy(os.path.join(EXP_BUFFER, 'config_'+str(i+1)+'.py'), os.path.join(CONFIG_DIR, 'config.py'))
         shutil.copy(os.path.join(EXP_BUFFER, 'experiment_train_'+str(i+1)+'.py'), os.path.join('./', 'experiment_train.py'))

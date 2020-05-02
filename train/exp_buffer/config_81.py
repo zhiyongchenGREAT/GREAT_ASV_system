@@ -2,13 +2,12 @@
 import os
 print(1)
 class Config(object):
-    train_name = "small mix 1L AL weight19_re"
-    description = 'small mix 1L AL weight step every rerun, no ctrl gamma, gamma 0.1 beta 0.1 fixed, with D class weight 6, \
-    long dur, ch adv and rebanlance adv class'
-    model = ''
+    train_name = "small 100 mix 1L pure balanGAN re1"
+    description = 'small 100 mix 1L pure balanGAN re no Sync long'
+    model = 'Xvector_SAP_1L'
     model_settings = {'in_feat': 30, 'emb_size': 512, 'class_num': 1311, \
-    's': 50, 'm': 0.2, 'anneal_steps': 1000, 'weight': 6}
-    metric = ''
+    's': 50, 'm': 0.2, 'anneal_steps': 1000}
+    metric = 'AM_normfree_softmax_anneal_ce_head'
     max_step = 1000000
 
     train_list = '/home/great10/sdsvc_small_100_dataset/mix_1311_smalltrain.csv'
@@ -26,7 +25,7 @@ class Config(object):
     lr_ctrl = {"metric": "MINC", "Dur": 5, "sig_th": 0.005}
     expect_scheduler_steps = 2
 
-    val_interval_step = 1000
+    val_interval_step = 2000
 
     train_batch_size = 128
 

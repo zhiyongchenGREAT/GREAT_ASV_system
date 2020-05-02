@@ -23,7 +23,7 @@ def main():
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    model = model_lab.DANN_tester_AL_w_changeadv(opt.model_settings)
+    model = FOCAL_ALDA.FOCAL_ALDA_2DO_OPT_FAST(opt.model_settings)
 
     if torch.cuda.is_available():
         print("Data Parallel on ", torch.cuda.device_count(), "GPUs!")
@@ -154,6 +154,7 @@ def main():
             training_utils.vox1test_lr_decay_ctrl_AL(opt, total_step, opt_e, [scheduler_e, scheduler_c, scheduler_d], train_log)
 
             training_utils.vox1test_metric_saver(model, opt, total_step, opt_e, scheduler_e, train_log)
+            training_utils.sdsvc_metric_saver(model, opt, total_step, opt_e, scheduler_e, train_log)
 
             if training_utils.stop_ctrl_std(opt, scheduler_e): break
 
