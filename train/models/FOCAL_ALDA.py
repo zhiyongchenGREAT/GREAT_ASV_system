@@ -358,3 +358,84 @@ class FOCAL_ALDA_2DO_OPT_FAST(nn.Module):
         acc_d = np.mean((pred_d == label_d).astype(int))
 
         return [loss_c, loss_d, loss_al], logits, emb2, [acc, acc_d], None
+
+class FOCAL_ALDA_MULDO_OPT_FAST(nn.Module):
+    def __init__(self, model_settings):
+        super(FOCAL_ALDA_MULDO_OPT_FAST, self).__init__()
+        self.th_step = model_settings['anneal_steps']
+        self.iter = 0.0
+        self.max_m = model_settings['m']
+        self.model_settings = model_settings
+        
+        self.backbone = nn.DataParallel(Xvector_SAP_1L(model_settings['in_feat'], model_settings['emb_size']))
+        self.metrics = AMSoftmax_normfree(in_features=model_settings['emb_size'], out_features=model_settings['class_num'], s=model_settings['s'], m=model_settings['m'])
+
+        self.layer_d1 = torch.nn.Sequential()
+        self.layer_d1.add_module('linear', nn.Linear(model_settings['emb_size'], model_settings['emb_size']))
+        self.layer_d1.add_module('relu', nn.ReLU(True))
+        self.layer_d1.add_module('batchnorm',nn.BatchNorm1d(model_settings['emb_size']))
+
+        self.layer_d2 = torch.nn.Sequential()
+        self.layer_d2.add_module('linear', nn.Linear(model_settings['emb_size'], len(self.model_settings['weight_split'])))
+
+        self.loss = torch.nn.CrossEntropyLoss(reduction='none')
+
+        self.sft = torch.nn.Softmax(dim=1)
+        self.negloss = torch.nn.NLLLoss(reduction='none')
+
+        assert(len(self.model_settings['class_split']) == len(self.model_settings['weight_split'])+1)
+        weight_split = np.array(self.model_settings['weight_split'])
+        self.weight_list = np.sum(weight_split) / (len(weight_split)*weight_split)        
+    
+    def get_optimizer(self):
+        opt_e = torch.optim.SGD(self.backbone.parameters(), lr=1e-2, momentum=0.9, weight_decay=5e-4)
+        opt_c = torch.optim.SGD(self.metrics.parameters(), lr=1e-2, momentum=0.9, weight_decay=5e-4)
+        opt_d = torch.optim.SGD(list(self.layer_d1.parameters())+list(self.layer_d2.parameters()), lr=1e-2, momentum=0.9, weight_decay=5e-4)
+
+        return opt_e, opt_c, opt_d
+    
+    def set_totalstep(self, total_step):
+        self.total_step = total_step
+    
+    def forward(self, x, y, mod):
+        weight = torch.zeros(y.size(), dtype=torch.float).cuda()
+        y_d = torch.zeros(y.size(), dtype=torch.long).cuda()
+        for i in range(len(self.model_settings['class_split'])-1):
+            weight[(y >= self.model_settings['class_split'][i]) & (y < self.model_settings['class_split'][i+1])] = self.weight_list[i]
+            y_d[(y >= self.model_settings['class_split'][i]) & (y < self.model_settings['class_split'][i+1])] = i
+        weight = weight.unsqueeze(1)
+
+        if mod == 'train':
+            self.iter += 1.0
+            m = min(self.max_m, (self.iter / self.th_step) * self.model_settings['m'])
+        else:
+            m = 0.0
+
+        emb1, emb2 = self.backbone(x, y)
+        logits, nm_W = self.metrics(emb2, y, s=self.model_settings['s'], m=m)
+        loss_c = self.loss(logits, y)
+        loss_c = torch.mean(loss_c)
+
+        emb_d1 = self.layer_d1(emb2.detach())
+        logits_d = self.layer_d2(emb_d1)
+
+        emb_d1_al = self.layer_d1(emb2)
+        logits_d_al = self.layer_d2(emb_d1_al)
+
+        loss_d = self.negloss(weight * ((1-self.sft(logits_d)) ** self.model_settings['focal_d_gamma']) * torch.log(self.sft(logits_d)), y_d)
+        loss_d = torch.mean(loss_d)
+
+        loss_al = torch.mean((-1) * weight * ((1-self.sft(logits_d_al)) ** self.model_settings['focal_al_gamma']) * torch.log(self.sft(logits_d_al)), dim=1)
+        loss_al = torch.mean(loss_al)
+
+        pred = logits.data.cpu().numpy()
+        pred = np.argmax(pred, axis=1)
+        label = y.data.cpu().numpy()
+        acc = np.mean((pred == label).astype(int))
+
+        pred_d = logits_d.data.cpu().numpy()
+        pred_d = np.argmax(pred_d, axis=1)
+        label_d = y_d.data.cpu().numpy()
+        acc_d = np.mean((pred_d == label_d).astype(int))
+
+        return [loss_c, loss_d, loss_al], logits, emb2, [acc, acc_d], None

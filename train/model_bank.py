@@ -7,8 +7,8 @@ def get_model(model, metric, model_settings, opt):
         return Linear_softmax_ce_head(backbone, model_settings)
 
     elif model == 'Resnet18' and metric == 'AM_normfree_softmax_anneal_ce_head':
-        backbone = Resnet18(model_settings['in_feat'], model_settings['emb_size'])
-        return AM_normfree_softmax_anneal_ce_head(backbone, model_settings)
+        backbone = ResNets_std.Resnet18(model_settings['in_feat'], model_settings['emb_size'])
+        return ResNets_std.AM_normfree_softmax_anneal_ce_head(backbone, model_settings)
 
     elif model == 'Xvector_SAP' and metric == 'Linear_softmax_ce_head':
         backbone = Xvector.Xvector_SAP(model_settings['in_feat'], model_settings['emb_size'])
