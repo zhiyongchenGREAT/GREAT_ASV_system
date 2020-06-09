@@ -2,10 +2,10 @@
 import os
 
 class Config(object):
-    train_name = "resnet18_vox"
-    description = 'resnet18_vox'
+    train_name = "resnet18_vox_GAP"
+    description = 'resnet18_vox_GAP'
     model = 'Resnet18'
-    model_settings = {'in_feat': 30, 'emb_size': 512, 'class_num': 7323, \
+    model_settings = {'in_feat': 30, 'emb_size': 256, 'class_num': 7323, \
     's': 50, 'm': 0.2, 'anneal_steps': 10000}
     metric = 'AM_normfree_softmax_anneal_ce_head'
     max_step = 1000000
