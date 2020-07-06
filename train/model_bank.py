@@ -6,6 +6,10 @@ def get_model(model, metric, model_settings, opt):
         backbone = Resnet18(model_settings['in_feat'], model_settings['emb_size'])
         return Linear_softmax_ce_head(backbone, model_settings)
 
+    elif model == 'Resnet34' and metric == 'AM_normfree_softmax_anneal_ce_head':
+        backbone = ResNets_std.Resnet34(model_settings['in_feat'], model_settings['emb_size'])
+        return ResNets_std.AM_normfree_softmax_anneal_ce_head(backbone, model_settings)
+
     elif model == 'Resnet18' and metric == 'AM_normfree_softmax_anneal_ce_head':
         backbone = ResNets_std.Resnet18(model_settings['in_feat'], model_settings['emb_size'])
         return ResNets_std.AM_normfree_softmax_anneal_ce_head(backbone, model_settings)

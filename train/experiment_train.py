@@ -36,7 +36,7 @@ def main():
     # scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.1)
 
     train_data = PickleDataSet_single(opt.train_list)
-    train_dataloader = My_DataLoader(train_data, batch_size=opt.train_batch_size, shuffle=False, \
+    train_dataloader = DataLoader(train_data, batch_size=opt.train_batch_size, shuffle=False, \
     sampler=RandomSampler(train_data, replacement=True, num_samples=opt.max_step*opt.train_batch_size), \
     batch_sampler=None, num_workers=opt.num_workers, collate_fn=None, \
     pin_memory=False, drop_last=False, timeout=0, \

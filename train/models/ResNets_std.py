@@ -263,21 +263,20 @@ class Resnet18(nn.Module):
         
         return out
 
-
 class Resnet34(nn.Module):
     def __init__(self, feat_dim, emb_dim):
         super(Resnet34, self).__init__()
         group_nums = [3, 4, 6, 3]
-        group_dims = [64, 128, 256, 512]
+        group_dims = [32, 64, 128, 256]
         self.resblocks = nn.ModuleList([])
 
         self.conv1 = nn.Sequential(
-            nn.Conv2d(in_channels=1, out_channels=group_dims[0], kernel_size=7, stride=2, padding=3),
+            nn.Conv2d(in_channels=1, out_channels=group_dims[0], kernel_size=3, stride=1, padding=1),
             nn.BatchNorm2d(group_dims[0]),
             nn.ReLU()
         )
 
-        self.pool1 = nn.MaxPool2d(3, stride=2, padding=1)
+        # self.pool1 = nn.MaxPool2d(3, stride=2, padding=1)
 
         for group_i, group_num in enumerate(group_nums):
             for block_i in range(group_num):
@@ -289,33 +288,83 @@ class Resnet34(nn.Module):
                     self.resblocks.append(PreactivateBlock(group_dims[group_i-1], group_dims[group_i], downsample=True, firstact=True))
                 else:
                     raise Exception("Wrong building resblocks")
-        
-        self.fc1 = nn.Sequential(
-            nn.BatchNorm2d(group_dims[-1]),
-            nn.ReLU(),
-            nn.Conv2d(group_dims[-1], out_channels=512, kernel_size=(16, 1), stride=1, padding=0),
-            nn.BatchNorm2d(512)
-        )
 
-        self.pooltime = nn.AdaptiveAvgPool2d(output_size=(1, 1))
+
+        self.GAP = nn.AdaptiveAvgPool2d(output_size=(1, 1))
+
+        self.embedding_layer1 = torch.nn.Sequential()
+        self.embedding_layer1.add_module('linear', nn.Linear(group_dims[-1], group_dims[-1]))
+        # self.embedding_layer1.add_module('relu', nn.ReLU(True))
+        self.embedding_layer1.add_module('batchnorm',nn.BatchNorm1d(group_dims[-1]))
     
     def forward(self, x, y):
         out = x.permute(0,2,1)
         out = out.unsqueeze(1)
+
         out = self.conv1(out)
-        out = self.pool1(out)
 
         for layer in self.resblocks:
             out = layer(out)
-            # print(out.shape)
         
-        out = self.fc1(out)
-        # print(out.shape)
-        out = self.pooltime(out)
-        # print(out.shape)
+        out = self.GAP(out)
         out = out.squeeze(-1)
         out = out.squeeze(-1)
+        out = self.embedding_layer1(out)
+        
         return out
+
+# class Resnet34(nn.Module):
+#     def __init__(self, feat_dim, emb_dim):
+#         super(Resnet34, self).__init__()
+#         group_nums = [3, 4, 6, 3]
+#         group_dims = [64, 128, 256, 512]
+#         self.resblocks = nn.ModuleList([])
+
+#         self.conv1 = nn.Sequential(
+#             nn.Conv2d(in_channels=1, out_channels=group_dims[0], kernel_size=7, stride=2, padding=3),
+#             nn.BatchNorm2d(group_dims[0]),
+#             nn.ReLU()
+#         )
+
+#         self.pool1 = nn.MaxPool2d(3, stride=2, padding=1)
+
+#         for group_i, group_num in enumerate(group_nums):
+#             for block_i in range(group_num):
+#                 if block_i != 0:
+#                     self.resblocks.append(PreactivateBlock(group_dims[group_i], group_dims[group_i], downsample=False, firstact=True))
+#                 elif group_i == 0 and block_i == 0:
+#                     self.resblocks.append(PreactivateBlock(group_dims[group_i], group_dims[group_i], downsample=False, firstact=False))
+#                 elif group_i != 0 and block_i == 0:
+#                     self.resblocks.append(PreactivateBlock(group_dims[group_i-1], group_dims[group_i], downsample=True, firstact=True))
+#                 else:
+#                     raise Exception("Wrong building resblocks")
+        
+#         self.fc1 = nn.Sequential(
+#             nn.BatchNorm2d(group_dims[-1]),
+#             nn.ReLU(),
+#             nn.Conv2d(group_dims[-1], out_channels=512, kernel_size=(16, 1), stride=1, padding=0),
+#             nn.BatchNorm2d(512)
+#         )
+
+#         self.pooltime = nn.AdaptiveAvgPool2d(output_size=(1, 1))
+    
+#     def forward(self, x, y):
+#         out = x.permute(0,2,1)
+#         out = out.unsqueeze(1)
+#         out = self.conv1(out)
+#         out = self.pool1(out)
+
+#         for layer in self.resblocks:
+#             out = layer(out)
+#             # print(out.shape)
+        
+#         out = self.fc1(out)
+#         # print(out.shape)
+#         out = self.pooltime(out)
+#         # print(out.shape)
+#         out = out.squeeze(-1)
+#         out = out.squeeze(-1)
+#         return out
 
 
 class Resnet50(nn.Module):
