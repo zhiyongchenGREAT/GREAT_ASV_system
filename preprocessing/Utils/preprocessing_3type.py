@@ -13,7 +13,7 @@ import traceback
 from multiprocessing import Process
 
 fft = librosa.get_fftlib()
-class MFCC_IterableDataset(object):
+class ThreeTypes_IterableDataset(object):
     def __init__(self, config, data_dir_dict=None, data_len_dict=None):
         if data_dir_dict is not None:           
             with open(data_dir_dict['spk2utt_train_dict'], 'rb') as handle:
