@@ -46,6 +46,7 @@ class ThreeTypes_IterableDataset(object):
         self.possible_noise_snr = [0, 5, 10, 15]
         self.possible_music_snr = [5, 8, 10, 15]
         self.mfcc_dim = 30
+        self.mels = 40
         self.extended_prefectch = 1.0
         
         self.sr = config['sr']
@@ -65,13 +66,19 @@ class ThreeTypes_IterableDataset(object):
             batch_frame_len = self.ramdom_batch_len.pop(0)
             batch_spkrs = self.random_spkrs_batchlist.pop(0)
             batch_noise_type = self.random_noise_type.pop(0)
-            batched_feats = np.zeros([self.batch_size, batch_frame_len, self.mfcc_dim])
+
+            batch_wav_len = (batch_frame_len-1) * 160
+
+            batched_feats_MFCC = np.zeros([self.batch_size, batch_frame_len, self.mfcc_dim])
+            batched_feats_LogMelFB = np.zeros([self.batch_size, batch_frame_len, self.mels])
+            batched_feats_rawwave = np.zeros([self.batch_size, batch_wav_len])
             batched_labels = np.zeros(self.batch_size)
             
             for batch_index, (spkr, noise_type) in enumerate(zip(batch_spkrs, batch_noise_type)):
                 
                 concat_wav, VAD_result = self._colleting_and_slicing(spkr, batch_frame_len,\
                 hop_len=160, extended_prefectch=self.extended_prefectch)
+                VAD_result_wav = self._VAD_detection2wav(VAD_result, concat_wav)
             
                 
                 if noise_type == 0:
@@ -91,22 +98,49 @@ class ThreeTypes_IterableDataset(object):
              
                 else:
                     raise NotImplementedError
+                
+                # Raw wave
+                # Apply VAD
+                assert aug_wav.shape[0] == VAD_result_wav.shape[0]
+                out_wav = aug_wav[VAD_result_wav.astype(np.bool)]
+                assert out_wav.shape[0] >= batch_wav_len
+                batched_feats_rawwave[batch_index] = out_wav[:batch_wav_len]
                     
-            
-                single_feats = librosa.feature.mfcc(y=aug_wav, sr=self.sr, n_mfcc=30, \
-                dct_type=2, n_fft=512, hop_length=160, \
+                single_feats_Mel = librosa.feature.melspectrogram(y=aug_wav, \
+                n_fft=512, hop_length=160, \
                 win_length=None, window='hann', power=2.0, \
-                center=True, pad_mode='reflect', n_mels=30, \
+                center=True, pad_mode='reflect', n_mels=self.mels, \
                 fmin=20, fmax=7600)
+                single_feats_LogMelFB = librosa.power_to_db(single_feats_Mel)
+
+                # LogMelFB
                 # Note single_feats needs transpose
-                out_feats = self._CMVN(single_feats.T, cmn_window = 300, normalize_variance = False)
+                out_feats = self._CMVN(single_feats_LogMelFB.T, cmn_window = 300, normalize_variance = False)
                 # Apply VAD
                 assert out_feats.shape[0] == VAD_result.shape[0]
                 out_feats = out_feats[VAD_result.astype(np.bool)]
-                batched_feats[batch_index] = out_feats[:batch_frame_len]
+                assert out_feats.shape[0] >= batch_frame_len
+                batched_feats_LogMelFB[batch_index] = out_feats[:batch_frame_len]
+
+                single_feats_MFCC = librosa.feature.mfcc(S=single_feats_LogMelFB, sr=self.sr, n_mfcc=self.mfcc_dim, \
+                dct_type=2, n_fft=512, hop_length=160, \
+                win_length=None, window='hann', power=2.0, \
+                center=True, pad_mode='reflect', n_mels=self.mels, \
+                fmin=20, fmax=7600)
+
+                # MFCC
+                # Note single_feats needs transpose
+                out_feats = self._CMVN(single_feats_MFCC.T, cmn_window = 300, normalize_variance = False)
+                # Apply VAD
+                assert out_feats.shape[0] == VAD_result.shape[0]
+                out_feats = out_feats[VAD_result.astype(np.bool)]
+                assert out_feats.shape[0] >= batch_frame_len
+                batched_feats_MFCC[batch_index] = out_feats[:batch_frame_len]
+                
+                # Label
                 batched_labels[batch_index] = spkr
                 
-            return batched_feats, batched_labels
+            return batched_feats_rawwave, batched_feats_LogMelFB, batched_feats_MFCC, batched_labels
         
         except IndexError:
             raise StopIteration
@@ -119,10 +153,10 @@ class ThreeTypes_IterableDataset(object):
             
             aug_wav = concat_wav
 
-            single_feats = librosa.feature.mfcc(y=aug_wav, sr=self.sr, n_mfcc=30, \
+            single_feats = librosa.feature.mfcc(y=aug_wav, sr=self.sr, n_mfcc=self.mfcc_dim, \
             dct_type=2, n_fft=512, hop_length=160, \
             win_length=None, window='hann', power=2.0, \
-            center=True, pad_mode='reflect', n_mels=30, \
+            center=True, pad_mode='reflect', n_mels=self.mels, \
             fmin=20, fmax=7600)
             # Note single_feats needs transpose
             out_feats = self._CMVN(single_feats.T, cmn_window = 300, normalize_variance = False)
@@ -143,10 +177,10 @@ class ThreeTypes_IterableDataset(object):
             
             aug_wav = concat_wav
 
-            single_feats = librosa.feature.mfcc(y=aug_wav, sr=self.sr, n_mfcc=30, \
+            single_feats = librosa.feature.mfcc(y=aug_wav, sr=self.sr, n_mfcc=self.mfcc_dim, \
             dct_type=2, n_fft=512, hop_length=160, \
             win_length=None, window='hann', power=2.0, \
-            center=True, pad_mode='reflect', n_mels=30, \
+            center=True, pad_mode='reflect', n_mels=self.mels, \
             fmin=20, fmax=7600)
             # Note single_feats needs transpose
             out_feats = self._CMVN(single_feats.T, cmn_window = 300, normalize_variance = False)
@@ -574,3 +608,10 @@ class ThreeTypes_IterableDataset(object):
                 output_voiced[t] = 0.0
         
         return output_voiced
+
+    def _VAD_detection2wav(self, VAD_frameD, wav):
+
+        VAD_wav = np.tile(VAD_frameD[:, None], (1,160)).reshape([-1])
+        assert len(VAD_wav) > len(wav)
+        VAD_wav = VAD_wav[:len(wav)]
+        return VAD_wav
