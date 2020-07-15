@@ -2,9 +2,9 @@
 import os
 
 class Config(object):
-    train_name = "resnet34_vox_GAP"
-    description = 'resnet34_vox_GAP'
-    model = 'Resnet34'
+    train_name = "resnet34_SAP_vox"
+    description = 'resnet34_SAP_vox'
+    model = 'Resnet34_SAP'
     model_settings = {'in_feat': 30, 'emb_size': 256, 'class_num': 7323, \
     's': 50, 'm': 0.2, 'anneal_steps': 10000}
     metric = 'AM_normfree_softmax_anneal_ce_head'
