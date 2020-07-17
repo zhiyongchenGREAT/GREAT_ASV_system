@@ -2,8 +2,8 @@
 import os
 
 class Config(object):
-    train_name = "resnet34_SAP_vox"
-    description = 'resnet34_SAP_vox'
+    train_name = "resnet34_SAP_TAUG_vox"
+    description = 'resnet34_SAP_TAUG_vox'
     model = 'Resnet34_SAP'
     model_settings = {'in_feat': 30, 'emb_size': 256, 'class_num': 7323, \
     's': 50, 'm': 0.2, 'anneal_steps': 10000}
