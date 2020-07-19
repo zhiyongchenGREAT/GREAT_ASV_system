@@ -84,7 +84,7 @@ def main():
         seed = torch.randint(0, 10, [])
         if seed >= 9:
             mask_start = torch.randint(0, batch_x.size(1)-50, [])
-            batch_x[:, mask_start:mask_start+50, :] = torch.min(batch_x)
+            batch_x[:, mask_start:mask_start+50, :] = 0.0
 
         loss, predict, emb, acc, inter = model(batch_x, batch_y, mod='train')
 
