@@ -2,9 +2,9 @@
 import os
 
 class Config(object):
-    train_name = "resnet34_SAP_TAUG_vox"
-    description = 'resnet34_SAP_TAUG_vox'
-    model = 'Resnet34_SAP'
+    train_name = "ResNet50_SAP_T"
+    description = 'ResNet50_SAP_T'
+    model = 'ResNet50_SAP_T'
     model_settings = {'in_feat': 30, 'emb_size': 256, 'class_num': 7323, \
     's': 50, 'm': 0.2, 'anneal_steps': 10000}
     metric = 'AM_normfree_softmax_anneal_ce_head'

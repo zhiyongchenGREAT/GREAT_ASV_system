@@ -10,6 +10,10 @@ def get_model(model, metric, model_settings, opt):
         backbone = ResNets_std.Resnet50(model_settings['in_feat'], model_settings['emb_size'])
         return ResNets_std.AM_normfree_softmax_anneal_ce_head(backbone, model_settings)
 
+    elif model == 'ResNet50_SAP_T' and metric == 'AM_normfree_softmax_anneal_ce_head':
+        backbone = Resnet50.ResNet50_SAP_T(model_settings['in_feat'], model_settings['emb_size'])
+        return Resnet50.AM_normfree_softmax_anneal_ce_head(backbone, model_settings)
+
     elif model == 'Resnet34_SAP' and metric == 'AM_normfree_softmax_anneal_ce_head':
         backbone = ResNets_std.Resnet34_SAP(model_settings['in_feat'], model_settings['emb_size'])
         return ResNets_std.AM_normfree_softmax_anneal_ce_head(backbone, model_settings)
