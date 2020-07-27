@@ -79,23 +79,22 @@ class ThreeTypes_IterableDataset(object):
                 concat_wav, VAD_result = self._colleting_and_slicing(spkr, batch_frame_len,\
                 hop_len=160, extended_prefectch=self.extended_prefectch)
                 VAD_result_wav = self._VAD_detection2wav(VAD_result, concat_wav)
-            
-                
+
                 if noise_type == 0:
                     aug_wav = concat_wav
-                
+
                 elif noise_type == 1:
-                    aug_wav = self._add_rebverb(concat_wav)
-                   
+                    aug_wav = self._add_rebverb(concat_wav)                
+                
                 elif noise_type == 2:
                     aug_wav = self._add_noise(concat_wav)
                     
                 elif noise_type == 3:
                     aug_wav = self._add_music(concat_wav)
-                  
+                
                 elif noise_type == 4:
                     aug_wav = self._add_babble(concat_wav)
-             
+            
                 else:
                     raise NotImplementedError
                 
@@ -105,7 +104,6 @@ class ThreeTypes_IterableDataset(object):
                 out_wav = aug_wav[VAD_result_wav.astype(np.bool)]
                 assert out_wav.shape[0] >= batch_wav_len
                 batched_feats_rawwave[batch_index] = out_wav[:batch_wav_len]
-                    
                 single_feats_Mel = librosa.feature.melspectrogram(y=aug_wav, \
                 n_fft=512, hop_length=160, \
                 win_length=None, window='hann', power=2.0, \
@@ -150,23 +148,48 @@ class ThreeTypes_IterableDataset(object):
             concat_wav, _ = librosa.load(utt_dir, sr=self.sr)
             
             VAD_result = self._VAD_detection(concat_wav)
+            VAD_result_wav = self._VAD_detection2wav(VAD_result, concat_wav)
             
             aug_wav = concat_wav
 
-            single_feats = librosa.feature.mfcc(y=aug_wav, sr=self.sr, n_mfcc=self.mfcc_dim, \
+            # Raw wave
+            # Apply VAD
+            assert aug_wav.shape[0] == VAD_result_wav.shape[0]
+            out_wav = aug_wav[VAD_result_wav.astype(np.bool)]
+            batched_feats_rawwave = out_wav[None, :]
+                
+            single_feats_Mel = librosa.feature.melspectrogram(y=aug_wav, \
+            n_fft=512, hop_length=160, \
+            win_length=None, window='hann', power=2.0, \
+            center=True, pad_mode='reflect', n_mels=self.mels, \
+            fmin=20, fmax=7600)
+            single_feats_LogMelFB = librosa.power_to_db(single_feats_Mel)
+
+            # LogMelFB
+            # Note single_feats needs transpose
+            out_feats = self._CMVN(single_feats_LogMelFB.T, cmn_window = 300, normalize_variance = False)
+            # Apply VAD
+            assert out_feats.shape[0] == VAD_result.shape[0]
+            out_feats = out_feats[VAD_result.astype(np.bool)]
+
+            batched_feats_LogMelFB = out_feats[None, :, :]
+
+            single_feats_MFCC = librosa.feature.mfcc(S=single_feats_LogMelFB, sr=self.sr, n_mfcc=self.mfcc_dim, \
             dct_type=2, n_fft=512, hop_length=160, \
             win_length=None, window='hann', power=2.0, \
             center=True, pad_mode='reflect', n_mels=self.mels, \
             fmin=20, fmax=7600)
+
+            # MFCC
             # Note single_feats needs transpose
-            out_feats = self._CMVN(single_feats.T, cmn_window = 300, normalize_variance = False)
+            out_feats = self._CMVN(single_feats_MFCC.T, cmn_window = 300, normalize_variance = False)
             # Apply VAD
             assert out_feats.shape[0] == VAD_result.shape[0]
             out_feats = out_feats[VAD_result.astype(np.bool)]
-            
-            batched_feats = out_feats[None, :, :]
+
+            batched_feats_MFCC = out_feats[None, :, :]
                 
-            return batched_feats
+            return batched_feats_rawwave, batched_feats_LogMelFB, batched_feats_MFCC
         
         except Exception:
             traceback.print_exc()
@@ -582,6 +605,10 @@ class ThreeTypes_IterableDataset(object):
         output_voiced = np.zeros(T)
         if (T == 0):
             raise Exception("zero wave length")
+
+        # directly return all 0 detected result if all 0
+        if (wav == 0.0).all():
+            return output_voiced
 
         energy_threshold = vad_energy_threshold
         if (vad_energy_mean_scale != 0.0):
