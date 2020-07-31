@@ -2,10 +2,10 @@
 import os
 
 class Config(object):
-    train_name = "resnet34_SAP_FB_vox"
-    description = 'resnet34_SAP_FB_vox'
+    train_name = "resnet34_SAP_FB_vox_fix"
+    description = 'resnet34_SAP_FB_vox_fix class num'
     model = 'Resnet34_SAP'
-    model_settings = {'in_feat': 30, 'emb_size': 256, 'class_num': 7323, \
+    model_settings = {'in_feat': 40, 'emb_size': 256, 'class_num': 5994, \
     's': 50, 'm': 0.2, 'anneal_steps': 10000}
     metric = 'AM_normfree_softmax_anneal_ce_head'
     max_step = 1000000
@@ -32,7 +32,7 @@ class Config(object):
 
     train_batch_size = 128
 
-    gpu_id = "4, 5"
+    gpu_id = "6, 7"
     num_workers = 32  # how many workers for loading data
     print_freq = 50  # print info every N batch
 
