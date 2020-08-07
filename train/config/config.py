@@ -2,12 +2,12 @@
 import os
 
 class Config(object):
-    train_name = "resnet34_SAP_XMU_1"
-    description = 'resnet34_SAP_XMU_1'
-    model = 'Resnet34_SAP_XMU'
+    train_name = "resnet34_ASV_1"
+    description = 'resnet34_ASV_1'
+    model = 'ResNet_ASV'
     model_settings = {'in_feat': 40, 'emb_size': 256, 'class_num': 5994, \
     's': 50, 'm': 0.2, 'anneal_steps': 10000}
-    metric = 'AM_normfree_softmax_anneal_ce_head'
+    metric = 'Resnet_ASV_large_margin_annealing'
     max_step = 1000000
 
     train_list = '/workspace/DATASET/std/VOX2_INFO/train_fb.csv'
@@ -36,7 +36,7 @@ class Config(object):
     num_workers = 32  # how many workers for loading data
     print_freq = 50  # print info every N batch
 
-    lr = 1e-2  # initial learning rate
+    lr = 0.01  # initial learning rate
 
     weight_decay = 5e-4
     momentum = 0.9

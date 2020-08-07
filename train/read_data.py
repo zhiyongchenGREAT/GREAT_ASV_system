@@ -10,6 +10,8 @@ import h5py
 import random
 import pickle
 
+__all__ = ["PickleDataSet", "PickleDataSet_single", "WithReplacementRandomSampler"]
+
 class SRE_CSVDataSet_Tmp(Dataset):
     def __init__(self, spkid2utt_csv):
         self.spkid2utt = pd.read_csv(spkid2utt_csv, header=None)

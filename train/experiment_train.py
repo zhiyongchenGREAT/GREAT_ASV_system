@@ -1,5 +1,6 @@
 import time
 import importlib
+import os
 
 import torch
 import training_utils
@@ -32,7 +33,8 @@ def main():
 
     
     optimizer = torch.optim.SGD(model.parameters(), lr=opt.lr, momentum=opt.momentum, weight_decay=opt.weight_decay)    
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 2, eta_min=1e-4, last_epoch=-1)
+    # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 2, eta_min=1e-4, last_epoch=-1)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, 10000, T_mult=2, eta_min=1e-5, last_epoch=-1)
     # scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.1)
 
     train_data = PickleDataSet_single(opt.train_list)
@@ -91,6 +93,8 @@ def main():
         loss.backward()
         optimizer.step()
 
+        scheduler.step()
+
         total_step += 1
 
         if (total_step % opt.print_freq) == 0:
@@ -103,21 +107,11 @@ def main():
             train_acc = 0
         
         
-        if (total_step % opt.val_interval_step) == 0:
+        if optimizer.param_groups[0]['lr'] == 0.01:
             training_utils.vox1test_cls_eval(model, opt, total_step, optimizer, train_log, tbx_writer)
             training_utils.vox1test_ASV_eval(model, device, opt, total_step, optimizer, train_log, tbx_writer)
 
-            # training_utils.sdsvc_cls_eval(model, opt, total_step, optimizer, train_log, tbx_writer)
-            # training_utils.sdsvc_ASV_eval(model, device, opt, total_step, optimizer, train_log, tbx_writer)
-
-            # training_utils.libri_cls_eval(model, opt, total_step, optimizer, train_log, tbx_writer)
-            # training_utils.libri_ASV_eval(model, device, opt, total_step, optimizer, train_log, tbx_writer)
-
-            training_utils.vox1test_lr_decay_ctrl(opt, total_step, optimizer, scheduler, train_log)
-
-            training_utils.vox1test_metric_saver(model, opt, total_step, optimizer, scheduler, train_log)
-
-            if training_utils.stop_ctrl_std(opt, scheduler): break
+            # if training_utils.stop_ctrl_std(opt, scheduler): break
 
             torch.backends.cudnn.benchmark = opt.cudnn_benchmark
             model.train()
