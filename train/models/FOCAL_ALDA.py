@@ -8,6 +8,8 @@ import numpy as np
 from torch.autograd import Function
 import torch.nn.functional as F
 
+__all__ = ["FOCAL_ALDA_MULDO_OPT_FAST"]
+
 class Xvector_SAP_1L(torch.nn.Module):
     def __init__(self, feat_dim, emb_dim):
         super(Xvector_SAP_1L, self).__init__()
