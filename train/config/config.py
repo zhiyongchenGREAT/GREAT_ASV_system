@@ -2,7 +2,7 @@
 import os
 print(1)
 class Config(object):
-    train_name = "small mix 1L FOCAL_ALDA_OPT_FAST_3DO re"
+    train_name = "small mix 1L FOCAL_ALDA_OPT_FAST_3DO re2"
     description = 'small mix 1L FOCAL_ALDA_OPT_FAST rerun, gamma 0.1 beta 0.1 fixed, class weight [12, 1, 1], \
     long dur, minc lr decay base on vox, f_d 0 f_al 0'
     model = ''
