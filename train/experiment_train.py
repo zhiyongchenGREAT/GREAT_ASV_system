@@ -23,7 +23,7 @@ def main():
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    model = FOCAL_ALDA.FOCAL_ALDA_MULDO_OPT_FAST(opt.model_settings)
+    model = FOCAL_ALDA.FOCAL_ALDA_2DO_OPT_FAST(opt.model_settings)
 
     if torch.cuda.is_available():
         print("Data Parallel on ", torch.cuda.device_count(), "GPUs!")
@@ -84,9 +84,8 @@ def main():
         except StopIteration:
             break
         
-        batch_x = batch_x.to(device)
-        batch_y = batch_y.to(device)
-
+        batch_x = batch_x.cuda(non_blocking=True)
+        batch_y = batch_y.cuda(non_blocking=True)
 
         # cut to 200-400
         length = torch.randint(200, 400, [])
@@ -106,7 +105,7 @@ def main():
         opt_e.zero_grad()
         opt_c.zero_grad()
         opt_d.zero_grad()
-        beta = min((total_step / 10000)*0.1, 0.1)*beta_scale
+        beta = min((total_step / 10000)*0.01, 0.01)*beta_scale
 
         (loss_c + beta*loss_al).backward(retain_graph=True)
         opt_c.step()
@@ -149,12 +148,8 @@ def main():
         if (total_step % opt.val_interval_step) == 0:
             training_utils.vox1test_cls_eval_AL(model, opt, total_step, opt_e, train_log, tbx_writer)
             training_utils.vox1test_ASV_eval(model, device, opt, total_step, opt_e, train_log, tbx_writer)
-
             training_utils.sdsvc_cls_eval_AL(model, opt, total_step, opt_e, train_log, tbx_writer)
             training_utils.sdsvc_ASV_eval(model, device, opt, total_step, opt_e, train_log, tbx_writer)
-
-            training_utils.libri_cls_eval_AL(model, opt, total_step, opt_e, train_log, tbx_writer)
-            training_utils.libri_ASV_eval(model, device, opt, total_step, opt_e, train_log, tbx_writer)
 
             training_utils.vox1test_lr_decay_ctrl_AL(opt, total_step, opt_e, [scheduler_e, scheduler_c, scheduler_d], train_log)
 
