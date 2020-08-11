@@ -6,7 +6,7 @@ import importlib
 
 CONFIG_DIR = './config'
 EXP_BUFFER = '/workspace/LOGS_OUTPUT/std_server5/buffer'
-CONFIG_ID = [13, 13]
+CONFIG_ID = [15, 16]
 GPU_O = "0, 1"
 
 for i in range(CONFIG_ID[0], CONFIG_ID[1]+1):    
