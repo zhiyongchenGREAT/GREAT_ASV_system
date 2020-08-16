@@ -23,6 +23,7 @@ class AMSoftmax_normfree(nn.Module):
         self.m = m
         self.weight = nn.Parameter(torch.empty([out_features, in_features], dtype=torch.float))
         nn.init.kaiming_normal_(self.weight, mode='fan_out', nonlinearity='relu')
+        # nn.init.xavier_uniform_(self.weight)
 
     def forward(self, input, label, s, m):
         self.s = s

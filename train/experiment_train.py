@@ -1,5 +1,6 @@
 import time
 import importlib
+import os
 
 import torch
 import training_utils
@@ -9,7 +10,6 @@ from read_data import *
 import config.config as config
 importlib.reload(config)
 from model_bank import *
-from models import *
 
 def main():
     opt = config.Config()
@@ -23,7 +23,7 @@ def main():
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    model = FOCAL_ALDA.FOCAL_ALDA_2DO_OPT_FAST(opt.model_settings)
+    model = get_model(opt.model, opt.metric, opt.model_settings, opt)
 
     if torch.cuda.is_available():
         print("Data Parallel on ", torch.cuda.device_count(), "GPUs!")
@@ -32,22 +32,19 @@ def main():
         sys.exit(1)
 
     
-    optimizer = torch.optim.SGD(model.parameters(), lr=opt.lr, momentum=opt.momentum, weight_decay=opt.weight_decay)
-    opt_e, opt_c, opt_d = model.get_optimizer()
-
-    scheduler_e = torch.optim.lr_scheduler.StepLR(opt_e, step_size=1, gamma=0.1)
-    scheduler_c = torch.optim.lr_scheduler.StepLR(opt_c, step_size=1, gamma=0.1)
-    scheduler_d = torch.optim.lr_scheduler.StepLR(opt_d, step_size=1, gamma=0.1)
+    optimizer = torch.optim.SGD(model.parameters(), lr=opt.lr, momentum=opt.momentum, weight_decay=opt.weight_decay)    
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 2, eta_min=1e-4, last_epoch=-1)
+    # scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.1)
 
     train_data = PickleDataSet_single(opt.train_list)
-    train_dataloader = My_DataLoader(train_data, batch_size=opt.train_batch_size, shuffle=False, \
+    train_dataloader = DataLoader(train_data, batch_size=opt.train_batch_size, shuffle=False, \
     sampler=RandomSampler(train_data, replacement=True, num_samples=opt.max_step*opt.train_batch_size), \
     batch_sampler=None, num_workers=opt.num_workers, collate_fn=None, \
     pin_memory=False, drop_last=False, timeout=0, \
     worker_init_fn=None, multiprocessing_context=None)
+ 
 
-
-    model, optimizer, scheduler, total_step = training_utils.resume_training(opt, model, opt_e, scheduler_e)
+    model, optimizer, scheduler, total_step = training_utils.resume_training(opt, model, optimizer, scheduler)
 
     opt = training_utils.dir_init(opt)
 
@@ -68,15 +65,8 @@ def main():
 
     print(model)
 
-    train_loss_c = 0.0
-    train_loss_d = 0.0
-    train_loss_al = 0.0
-    
-    train_acc_c = 0.0
-    train_acc_d = 0.0
-
-    beta_scale = 1.0
-    gamma_scale = 1.0
+    train_loss = 0
+    train_acc = 0
 
     while True:
         try:
@@ -92,32 +82,15 @@ def main():
         start = torch.randint(0, 400-length, [])
         batch_x = batch_x[:, start:start+length, :]
 
-        [loss_c, loss_d, loss_al], _, _, [acc_c, acc_d], _ = model(batch_x, batch_y, mod='train')
+        loss, predict, emb, acc, inter = model(batch_x, batch_y, mod='train')
 
-        train_loss_c += loss_c.item()/opt.print_freq
-        train_loss_d += loss_d.item()/opt.print_freq
-        train_loss_al += loss_al.item()/opt.print_freq
+        train_loss += loss.item()/opt.print_freq
 
-        train_acc_c += acc_c/opt.print_freq
-        train_acc_d += acc_d/opt.print_freq
+        train_acc += acc/opt.print_freq
 
-
-        opt_e.zero_grad()
-        opt_c.zero_grad()
-        opt_d.zero_grad()
-        beta = min((total_step / 10000)*0.01, 0.01)*beta_scale
-
-        (loss_c + beta*loss_al).backward(retain_graph=True)
-        opt_c.step()
-        opt_e.step()
-            
-        opt_e.zero_grad()
-        opt_c.zero_grad()
-        opt_d.zero_grad()
-        gamma = min((total_step / 10000)*0.1, 0.1)*gamma_scale
-
-        (gamma*loss_d).backward()
-        opt_d.step() 
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
 
         total_step += 1
 
@@ -125,38 +98,27 @@ def main():
             delta_time = time.time() - timing_point
             timing_point = time.time()
 
-            training_utils.da_freq_logging(delta_time, total_step, [train_loss_c, train_loss_d, train_loss_al], \
-            [train_acc_c, train_acc_d], opt_e, train_log, tbx_writer)
+            training_utils.standard_freq_logging(delta_time, total_step, train_loss, train_acc, optimizer, train_log, tbx_writer)
 
-            msg = "ACC_d: "+str(train_acc_d)+" Beta: "+str(beta)+" Gamma: "+str(gamma)
-            print(msg)
-            train_log.writelines([msg+'\n'])
-
-            # if train_acc_d < 0.8:
-            #     gamma_scale = min(gamma_scale * 1.5, 20)
-            # else:
-            #     gamma_scale = 1.0
-
-            train_loss_c = 0.0
-            train_loss_d = 0.0
-            train_loss_al = 0.0
-            
-            train_acc_c = 0.0
-            train_acc_d = 0.0
+            train_loss = 0
+            train_acc = 0
         
         
         if (total_step % opt.val_interval_step) == 0:
-            training_utils.vox1test_cls_eval_AL(model, opt, total_step, opt_e, train_log, tbx_writer)
-            training_utils.vox1test_ASV_eval(model, device, opt, total_step, opt_e, train_log, tbx_writer)
-            training_utils.sdsvc_cls_eval_AL(model, opt, total_step, opt_e, train_log, tbx_writer)
-            training_utils.sdsvc_ASV_eval(model, device, opt, total_step, opt_e, train_log, tbx_writer)
+            training_utils.vox1test_cls_eval(model, opt, total_step, optimizer, train_log, tbx_writer)
+            training_utils.vox1test_ASV_eval(model, device, opt, total_step, optimizer, train_log, tbx_writer)
 
-            training_utils.vox1test_lr_decay_ctrl_AL(opt, total_step, opt_e, [scheduler_e, scheduler_c, scheduler_d], train_log)
+            # training_utils.sdsvc_cls_eval(model, opt, total_step, optimizer, train_log, tbx_writer)
+            # training_utils.sdsvc_ASV_eval(model, device, opt, total_step, optimizer, train_log, tbx_writer)
 
-            training_utils.vox1test_metric_saver(model, opt, total_step, opt_e, scheduler_e, train_log)
-            training_utils.sdsvc_metric_saver(model, opt, total_step, opt_e, scheduler_e, train_log)
+            # training_utils.libri_cls_eval(model, opt, total_step, optimizer, train_log, tbx_writer)
+            # training_utils.libri_ASV_eval(model, device, opt, total_step, optimizer, train_log, tbx_writer)
 
-            if training_utils.stop_ctrl_std(opt, scheduler_e): break
+            training_utils.vox1test_lr_decay_ctrl(opt, total_step, optimizer, scheduler, train_log)
+
+            training_utils.vox1test_metric_saver(model, opt, total_step, optimizer, scheduler, train_log)
+
+            if training_utils.stop_ctrl_std(opt, scheduler): break
 
             torch.backends.cudnn.benchmark = opt.cudnn_benchmark
             model.train()
