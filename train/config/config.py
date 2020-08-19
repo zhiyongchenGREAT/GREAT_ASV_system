@@ -2,8 +2,8 @@
 import os
 
 class Config(object):
-    train_name = "resnet34_ASV_2"
-    description = 'resnet34_ASV with original training'
+    train_name = "resnet34_ASV_4"
+    description = 'resnet34_ASV with cosine 1 time 400k'
     model = 'ResNet_ASV'
     model_settings = {'in_feat': 40, 'emb_size': 256, 'class_num': 5994, \
     's': 50, 'm': 0.2, 'anneal_steps': 10000}
