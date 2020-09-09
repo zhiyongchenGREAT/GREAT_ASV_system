@@ -1,6 +1,24 @@
 import os
 import torch
 
+def std_saver(model, opt, total_step, optimizer, scheduler, train_log, save_name, save_log):
+    save_path = os.path.join(opt.checkpoints_path, save_name+'.model')
+    
+    state = {
+        'model': model.state_dict(),
+        'optimizer': optimizer.state_dict(),
+        'scheduler': scheduler.state_dict(),
+        'total_step': total_step
+        }
+
+    torch.save(state, save_path)
+    msg = 'Model saved to '+save_path
+    print(msg)
+    train_log.writelines([msg+'\n']) 
+    with open(os.path.join(opt.checkpoints_path, save_name+'.log'), 'w') as f:
+        f.write(save_log)
+
+
 def vox1test_metric_saver(model, opt, total_step, optimizer, scheduler, train_log):
     metric = opt.saver_metric
     metric_value = None

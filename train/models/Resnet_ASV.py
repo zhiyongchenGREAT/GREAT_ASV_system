@@ -11,7 +11,7 @@ import torch.nn.functional as F
 import numpy as np
 from .large_margin_clf import *
 
-__all__ = ["ResNet_ASV", "Resnet_ASV_large_margin_annealing"]
+__all__ = ["ResNet_ASV", "ResNet_ASV_Transformer", "Resnet_ASV_large_margin_annealing"]
 
 def conv3x3(in_planes, out_planes, Conv=nn.Conv2d, stride=1, groups=1, dilation=1):
     """3x3 convolution with padding"""
@@ -400,6 +400,57 @@ class ResNet_ASV(nn.Module):
         x = x.permute(0,2,1)
         x = x.unsqueeze(1)
         x = self.backbone(x)
+        x = x.reshape(x.shape[0], x.shape[1]*x.shape[2], x.shape[3])
+        x = self.stat_pool(x)
+        out = self.embedding_layer1(x)
+
+        return out
+
+class ResNet_ASV_Transformer(nn.Module):
+    def __init__(self, utt_dim=1280, embedding_dim=256):
+        super(ResNet_ASV_Transformer, self).__init__()
+
+        self.encoder_layer = nn.TransformerEncoderLayer(d_model=40, nhead=8)
+        self.transformer_encoder = nn.TransformerEncoder(self.encoder_layer, num_layers=2)
+        
+        self.backbone = ResNet(2)
+
+        self.utt_dim = utt_dim
+        self.embedding_dim = embedding_dim
+
+        self.embedding_layer1 = torch.nn.Sequential()
+        self.embedding_layer1.add_module('linear', nn.Linear(self.utt_dim*2, self.embedding_dim))
+        self.embedding_layer1.add_module('relu', nn.ReLU(True))
+        self.embedding_layer1.add_module('batchnorm',nn.BatchNorm1d(self.embedding_dim))
+
+        nn.init.kaiming_normal_(self.embedding_layer1.linear.weight, mode='fan_out', nonlinearity='relu')
+        nn.init.constant_(self.embedding_layer1.linear.bias, 0.0)
+        nn.init.constant_(self.embedding_layer1.batchnorm.weight, 1.0)
+        nn.init.constant_(self.embedding_layer1.batchnorm.bias, 0.0)
+
+
+    def stat_pool(self, stat_src):
+        stat_mean = torch.mean(stat_src,dim=2)
+        stat_std = torch.sqrt(torch.var(stat_src,dim=2)+0.00001)
+        stat_pool_out = torch.cat((stat_mean,stat_std),1)
+        return stat_pool_out
+
+    def forward(self, x, y):
+        x_1 = x.permute(1, 0, 2)
+        out = self.transformer_encoder(x_1)
+        out = out.permute(1, 0, 2)
+
+        x = x.permute(0, 2, 1)
+        out = out.permute(0, 2, 1)
+
+        x = x.unsqueeze(1)
+        out = out.unsqueeze(1)
+
+        x_ready = torch.cat([x, out], dim=1)
+
+        # x = x.permute(0,2,1)
+        # x = x.unsqueeze(1)
+        x = self.backbone(x_ready)
         x = x.reshape(x.shape[0], x.shape[1]*x.shape[2], x.shape[3])
         x = self.stat_pool(x)
         out = self.embedding_layer1(x)

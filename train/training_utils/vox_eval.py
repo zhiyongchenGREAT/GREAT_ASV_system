@@ -8,6 +8,7 @@ import numpy as np
 from read_data import *
 from my_dataloader import *
 import score
+import fitlog
 
 def vox1test_cls_eval(model, opt, total_step, optimizer, train_log, tbx_writer):
     if not hasattr(opt, 'vox_val_list'):
@@ -240,3 +241,89 @@ def vox1test_ASV_eval(model, device, opt, total_step, optimizer, train_log, tbx_
     train_log.writelines([msg+'\n']) 
     with open(opt.val_log_path, 'a') as f:
         f.writelines([msg+'\n'])    
+
+def vox1test_ASV_eval_st_fitlog(model, device, opt, total_step, optimizer, train_log, tbx_writer):
+    torch.backends.cudnn.benchmark = False
+    model.eval()
+    # print('Final score evaluation')
+
+    train_data = PickleDataSet(opt.vox1test_trial_list)
+    train_dataloader = My_DataLoader(train_data, batch_size=None, shuffle=False, sampler=None,\
+    batch_sampler=None, num_workers=opt.num_workers, collate_fn=None,\
+    pin_memory=False, drop_last=False, timeout=0,\
+    worker_init_fn=None, multiprocessing_context=None)
+
+    test_list = {}
+
+    for count, (batch_x, batch_y) in enumerate(train_dataloader):
+        batch_x = batch_x.to(device)
+        label = batch_y[0]
+
+        batch_y = torch.tensor([0]).to(device)
+        
+        with torch.no_grad():
+            _, _, emb, _, _ = model(batch_x, batch_y, mod='eval')
+
+        emb = emb.squeeze().data.cpu().numpy()
+        
+        if label not in test_list.keys():
+            test_list[label] = emb[None, :]
+        else:
+            print('repeat eer:', label)
+            break
+
+    msg = "vox1test_ASV_eval Step: {:} Embcount: {:}".format(total_step, (count + 1))
+    print(msg)
+    train_log.writelines([msg+'\n']) 
+    
+    out_dir = os.path.join(opt.temporal_results_path, 's'+str(total_step), 'vox1test_ASV_eval')
+    if not os.path.isdir(out_dir):
+        os.makedirs(out_dir)
+    f_out = open(os.path.join(out_dir, 'scores'), 'w')   
+    
+    for i in test_list:
+        test_list[i] = (1.0 / np.linalg.norm(test_list[i])) * test_list[i]
+    
+    with open(opt.vox1test_trial_keys, 'r') as f:
+        for count, line in enumerate(f):
+            if count == 0:
+                pass
+                # print(line)
+
+            enroll_emb = test_list[line.split(' ')[0][:-4]].squeeze()
+            test_emb = test_list[line.split(' ')[1][:-4]].squeeze()
+            
+            cosine = np.dot(enroll_emb, test_emb)
+            
+            f_out.write(line.split(' ')[0]+' '+line.split(' ')[1]+' '+str(cosine)+'\n')
+    
+    f_out.close()
+
+    msg = "vox1test_ASV_eval Step: {:} Trialcount: {:}".format(total_step, (count + 1))
+    print(msg)
+    train_log.writelines([msg+'\n']) 
+
+    scoring_config = {'p_target': [0.01], 'c_miss': 1, 'c_fa': 1}
+    eer, minc_1, actc = score.scoring(os.path.join(out_dir, 'scores'), opt.vox1test_trial_keys, scoring_config)
+    scoring_config = {'p_target': [0.001], 'c_miss': 1, 'c_fa': 1}
+    _, minc_2, _ = score.scoring(os.path.join(out_dir, 'scores'), opt.vox1test_trial_keys, scoring_config)
+
+    tbx_writer.add_scalar('vox1test_ASV_eval_EER', eer, total_step)
+    tbx_writer.add_scalar('vox1test_ASV_eval_MINC', minc_1, total_step)
+    tbx_writer.add_scalar('vox1test_ASV_eval_ACTC', actc, total_step)
+
+    fitlog.add_metric({"Voxceleb_O":{"EER":eer}}, step=total_step)
+    fitlog.add_metric({"Voxceleb_O":{"MINC_0.01":minc_1}}, step=total_step)
+    fitlog.add_metric({"Voxceleb_O":{"MINC_0.001":minc_2}}, step=total_step)
+
+    fitlog.add_best_metric({"Voxceleb_O":{"EER":eer*100}})
+    fitlog.add_best_metric({"Voxceleb_O":{"MINC_0.01":minc_1}})
+    fitlog.add_best_metric({"Voxceleb_O":{"MINC_0.001":minc_2}})
+
+    current_lr = optimizer.param_groups[0]['lr']
+    msg = "vox1test_ASV_eval Step: {:} EER: {:.4f} MINC: {:.4f} ACTC: {:.4f} Lr: {:.5f}"\
+    .format(total_step, eer, minc_1, actc, current_lr)
+    print(msg)
+    train_log.writelines([msg+'\n']) 
+    with open(opt.val_log_path, 'a') as f:
+        f.writelines([msg+'\n'])  
