@@ -24,6 +24,10 @@ def get_model(model, metric, model_settings, opt):
         backbone = ResNet_ASV()
         return Resnet_ASV_large_margin_annealing(backbone, model_settings)
 
+    elif model == 'ResNet_ASV_Transformer' and metric == 'Resnet_ASV_large_margin_annealing':
+        backbone = ResNet_ASV_Transformer()
+        return Resnet_ASV_large_margin_annealing(backbone, model_settings)
+
     elif model == 'Resnet34_SAP_XMU' and metric == 'AM_normfree_softmax_anneal_ce_head':
         backbone = Resnet_XMU.ResNet_ASV()
         return Resnet_XMU.AM_normfree_softmax_anneal_ce_head(backbone, model_settings)
