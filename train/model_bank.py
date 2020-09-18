@@ -28,6 +28,14 @@ def get_model(model, metric, model_settings, opt):
         backbone = ResNet_ASV_50()
         return Resnet_ASV_large_margin_annealing(backbone, model_settings)
 
+    elif model == 'ResNeSt_ASV' and metric == 'ResNeSt_ASV_large_margin_annealing':
+        backbone = ResNeSt_ASV()
+        return ResNeSt_ASV_large_margin_annealing(backbone, model_settings)
+
+    elif model == 'ResNeSt_Lite_ASV' and metric == 'ResNeSt_ASV_large_margin_annealing':
+        backbone = ResNeSt_Lite_ASV()
+        return ResNeSt_ASV_large_margin_annealing(backbone, model_settings)
+
     elif model == 'ResNet_ASV_Transformer' and metric == 'Resnet_ASV_large_margin_annealing':
         backbone = ResNet_ASV_Transformer()
         return Resnet_ASV_large_margin_annealing(backbone, model_settings)
