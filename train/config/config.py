@@ -2,12 +2,12 @@
 import os
 
 class Config(object):
-    train_name = "resnet34_ASV_4"
-    description = 'resnet34_ASV with cosine 1 time 400k'
-    model = 'ResNet_ASV'
+    train_name = "ResNeSt_Lite_ASV_bias"
+    description = 'ResNeSt Lite with bias'
+    model = 'ResNeSt_Lite_ASV'
     model_settings = {'in_feat': 40, 'emb_size': 256, 'class_num': 5994, \
     's': 50, 'm': 0.2, 'anneal_steps': 10000}
-    metric = 'Resnet_ASV_large_margin_annealing'
+    metric = 'ResNeSt_ASV_large_margin_annealing'
     max_step = 1000000
 
     train_list = '/workspace/DATASET/std/VOX2_INFO/train_fb.csv'
@@ -32,7 +32,7 @@ class Config(object):
 
     train_batch_size = 128
 
-    gpu_id = "4, 5"
+    gpu_id = "1, 2, 3"
     num_workers = 32  # how many workers for loading data
     print_freq = 50  # print info every N batch
 
@@ -46,3 +46,7 @@ class Config(object):
 
     exp_path = "/workspace/LOGS_OUTPUT/std_server5/train"
     tbx_path = "/workspace/LOGS_OUTPUT/std_server5/tbx"
+
+    fitlog_dir = '/workspace/LOGS_OUTPUT/std_server5/RUNNING_BASE/ASV_logs/'
+    fitlog_DATASET_log = 'Voxceleb2_Kaldi_AUG'
+    fitlog_best_metric = 'EER'
