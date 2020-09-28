@@ -14,6 +14,8 @@ from model_bank import *
 def main():
     opt = config.Config()
 
+    training_utils.standard_fitlog_init(opt)
+
     os.environ['CUDA_VISIBLE_DEVICES'] = opt.gpu_id
     torch.backends.cudnn.benchmark = opt.cudnn_benchmark
 
@@ -110,7 +112,9 @@ def main():
         if optimizer.param_groups[0]['lr'] == 0.01:
             training_utils.vox1test_cls_eval(model, opt, total_step, optimizer, train_log, tbx_writer)
             training_utils.vox1test_ASV_eval(model, device, opt, total_step, optimizer, train_log, tbx_writer)
-            training_utils.vox1test_metric_saver(model, opt, total_step, optimizer, scheduler, train_log)
+            # training_utils.vox1test_ASV_st_fitlog(opt, total_step, train_log)
+            training_utils.vox1test_ASV_st_fitlog(model, opt, total_step, optimizer, scheduler, train_log)
+            # training_utils.vox1test_metric_saver(model, opt, total_step, optimizer, scheduler, train_log)            
 
             # if training_utils.stop_ctrl_std(opt, scheduler): break
 
