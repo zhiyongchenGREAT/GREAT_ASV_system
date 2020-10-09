@@ -11,7 +11,7 @@ import torch.nn.functional as F
 import numpy as np
 from .large_margin_clf import *
 
-__all__ = ["ResNet_ASV", "ResNet_ASV_Transformer", "ResNet_ASV_50", "Resnet_ASV_large_margin_annealing"]
+__all__ = ["ResNet_ASV", "ResNet_ASV_Transformer", "ResNet_ASV_50", "Resnet_ASV_large_margin_annealing", "Resnet_ASV_large_margin_annealing_labsm"]
 
 def conv3x3(in_planes, out_planes, Conv=nn.Conv2d, stride=1, groups=1, dilation=1):
     """3x3 convolution with padding"""
@@ -523,6 +523,45 @@ class Resnet_ASV_large_margin_annealing(nn.Module):
         emb2 = self.backbone(x, y)
         logits, nm_W = self.metrics(emb2, y, s=self.model_settings['s'], m=m)
         loss = self.loss(logits, y)
+
+        pred = logits.data.cpu().numpy()
+        pred = np.argmax(pred, axis=1)
+        label = y.data.cpu().numpy()
+        acc = np.mean((pred == label).astype(int))
+
+        return loss, logits, emb2, acc, 0.0  
+
+class Resnet_ASV_large_margin_annealing_labsm(nn.Module):
+    def __init__(self, backbone, model_settings):
+        super(Resnet_ASV_large_margin_annealing_labsm, self).__init__()
+        self.th_step = model_settings['anneal_steps']
+        self.iter = 0.0
+        self.max_m = model_settings['m']
+        self.model_settings = model_settings
+        
+        self.backbone = nn.DataParallel(backbone)
+        self.metrics = AMSoftmax_normfree(in_features=model_settings['emb_size'], out_features=model_settings['class_num'], s=model_settings['s'], m=model_settings['m'])
+        # self.loss = torch.nn.CrossEntropyLoss()
+        self.LogSoftmax = torch.nn.LogSoftmax(dim=1)
+        eps_labsm = 0.1
+        self.max_labsm = (1 - eps_labsm)
+        self.other_labsm = eps_labsm / (model_settings['class_num'] - 1)
+    
+    def forward(self, x, y, mod):
+        if mod == 'train':
+            self.iter += 1.0
+            m = min(self.max_m, (self.iter / self.th_step) * self.model_settings['m'])
+        else:
+            m = 0.0
+
+        emb2 = self.backbone(x, y)
+        logits, nm_W = self.metrics(emb2, y, s=self.model_settings['s'], m=m)
+
+        logsoft = self.LogSoftmax(logits)
+        labsm_mask = torch.ones(logsoft.size()).cuda() * self.other_labsm
+        for i, j in zip(labsm_mask, y):
+            i[j] = self.max_labsm
+        loss = - torch.sum(logsoft*labsm_mask) / y.size(0)
 
         pred = logits.data.cpu().numpy()
         pred = np.argmax(pred, axis=1)
