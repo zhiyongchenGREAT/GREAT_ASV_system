@@ -9,7 +9,7 @@ from . import ckpt_saver
 __all__ = ['standard_fitlog_init', 'vox1test_ASV_st_fitlog']
 
 def standard_fitlog_init(opt):
-    fitlog.commit(__file__, fit_msg=opt.train_name)             # auto commit your codes
+    fitlog.commit(file=opt.fitlog_file_dir, fit_msg=opt.train_name)             # auto commit your codes
     fitlog.set_log_dir(opt.fitlog_dir)         # set the logging directory
     
     fitlog.add_other({"DESCRIPTION": opt.description})
