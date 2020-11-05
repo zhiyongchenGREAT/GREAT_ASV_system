@@ -10,8 +10,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 from .large_margin_clf import *
+from .att_model import *
 
-__all__ = ["ResNet_ASV", "ResNet_ASV_Transformer", "ResNet_ASV_50", "Resnet_ASV_large_margin_annealing", "Resnet_ASV_large_margin_annealing_labsm"]
+__all__ = ["ResNet_ASV", "ResNet_ASV_Transformer", "ResNet_ASV_50", "ResNet_ASV_mrmh_att", "Resnet_ASV_large_margin_annealing", "Resnet_ASV_large_margin_annealing_labsm"]
 
 def conv3x3(in_planes, out_planes, Conv=nn.Conv2d, stride=1, groups=1, dilation=1):
     """3x3 convolution with padding"""
@@ -409,6 +410,54 @@ class ResNet_ASV(nn.Module):
         x = x.reshape(x.shape[0], x.shape[1]*x.shape[2], x.shape[3])
         x = self.stat_pool(x)
         out = self.embedding_layer1(x)
+
+        return out
+
+class ResNet_ASV_mrmh_att(nn.Module):
+    def __init__(self, utt_dim=1280, embedding_dim=256):
+        super(ResNet_ASV_mrmh_att, self).__init__()
+        self.backbone = ResNet(1)
+
+        self.utt_dim = utt_dim
+        self.embedding_dim = embedding_dim
+
+        self.embedding_layer1 = torch.nn.Sequential()
+        self.embedding_layer1.add_module('linear', nn.Linear(self.utt_dim * 5, self.embedding_dim))
+        self.embedding_layer1.add_module('relu', nn.ReLU(True))
+        self.embedding_layer1.add_module('batchnorm',nn.BatchNorm1d(self.embedding_dim))
+
+        nn.init.kaiming_normal_(self.embedding_layer1.linear.weight, mode='fan_out', nonlinearity='relu')
+        nn.init.constant_(self.embedding_layer1.linear.bias, 0.0)
+        nn.init.constant_(self.embedding_layer1.batchnorm.weight, 1.0)
+        nn.init.constant_(self.embedding_layer1.batchnorm.bias, 0.0)
+
+        self.embedding_layer2 = torch.nn.Sequential()
+        self.embedding_layer2.add_module('linear', nn.Linear(self.embedding_dim, self.embedding_dim))
+        self.embedding_layer2.add_module('relu', nn.ReLU(True))
+        self.embedding_layer2.add_module('batchnorm',nn.BatchNorm1d(self.embedding_dim))
+
+        nn.init.kaiming_normal_(self.embedding_layer2.linear.weight, mode='fan_out', nonlinearity='relu')
+        nn.init.constant_(self.embedding_layer2.linear.bias, 0.0)
+        nn.init.constant_(self.embedding_layer2.batchnorm.weight, 1.0)
+        nn.init.constant_(self.embedding_layer2.batchnorm.bias, 0.0)
+
+        self.mrmh_att = MRMH_att_module(utt_dim=self.utt_dim)
+
+    def stat_pool(self, stat_src):
+        stat_mean = torch.mean(stat_src,dim=2)
+        stat_std = torch.sqrt(torch.var(stat_src,dim=2)+0.00001)
+        stat_pool_out = torch.cat((stat_mean,stat_std),1)
+        return stat_pool_out
+
+    def forward(self, x, y):
+        x = x.permute(0,2,1)
+        x = x.unsqueeze(1)
+        x = self.backbone(x)
+        x = x.reshape(x.shape[0], x.shape[1]*x.shape[2], x.shape[3])
+        x = self.mrmh_att(x)
+
+        out = self.embedding_layer1(x)
+        out = self.embedding_layer2(out)
 
         return out
 

@@ -24,6 +24,10 @@ def get_model(model, metric, model_settings, opt):
         backbone = ResNet_ASV()
         return Resnet_ASV_large_margin_annealing(backbone, model_settings)
 
+    elif model == 'ResNet_ASV_mrmh_att' and metric == 'Resnet_ASV_large_margin_annealing':
+        backbone = ResNet_ASV_mrmh_att()
+        return Resnet_ASV_large_margin_annealing(backbone, model_settings)
+
     elif model == 'ResNet_ASV' and metric == 'Resnet_ASV_large_margin_annealing_labsm':
         backbone = ResNet_ASV()
         return Resnet_ASV_large_margin_annealing_labsm(backbone, model_settings)
