@@ -12,6 +12,7 @@ from tuneThreshold import tuneThresholdfromScore
 from DatasetLoader import get_data_loader
 import os
 import shutil
+import training_utils
 
 
 parser = argparse.ArgumentParser(description = "SpeakerNet");
@@ -72,6 +73,7 @@ parser.add_argument('--nOut',           type=int,   default=512,    help='Embedd
 ## Training Control
 parser.add_argument('--trainlogs',      type=str,   default="/workspace/LOGS_OUTPUT/tmp_logs/train_logs_201120");
 parser.add_argument('--fitlogdir',      type=str,   default="/workspace/LOGS_OUTPUT/tmp_logs/ASV_LOGS_201120");
+parser.add_argument('--tbxdir',         type=str,   default="/workspace/LOGS_OUTPUT/tmp_logs/tbx")
 parser.add_argument('--fitlog_DATASET', type=str,   default="otf_vox2_aug");
 parser.add_argument('--fitlog_Desc',    type=str,   default="this is a test run");
 parser.add_argument('--train_name',     type=str,   default="train_test");
@@ -119,9 +121,10 @@ train_file_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 shutil.copytree(train_file_dir, os.path.join(args.trainlogs, args.train_name, 'code'))
 
 ## fitlog
+training_utils.standard_fitlog_init(**vars(args))
 
 ## tb
-
+tbxwriter = training_utils.tensorboard_init(**vars(args))
 
 ## Load models
 if not args.amp:
@@ -129,7 +132,7 @@ if not args.amp:
 else:
     SpeakerNet = importlib.import_module('SpeakerNet_amp').__getattribute__('SpeakerNet')
 
-s = SpeakerNet(**vars(args));
+s = SpeakerNet(tbxwriter=tbxwriter, **vars(args));
 
 it          = 1;
 prevloss    = float("inf");
@@ -206,6 +209,10 @@ while(1):
         print(time.strftime("%Y-%m-%d %H:%M:%S"), "LR %f, TEER/TAcc %2.2f, TLOSS %f, VEER %2.4f, MINEER %2.4f"%( max(clr), traineer, loss, result[1], min(min_eer)));
         scorefile.write("IT %d, LR %f, TEER/TAcc %2.2f, TLOSS %f, VEER %2.4f, MINEER %2.4f\n"%(it, max(clr), traineer, loss, result[1], min(min_eer)));
 
+        training_utils.vox1_o_ASV_step_fitlog(result[1], result[-2], result[-1], it)
+        if result[1] == min(min_eer):
+            training_utils.vox1_o_ASV_best_fitlog(result[1], result[-2], result[-1])
+        
         scorefile.flush()
 
         s.saveParameters(model_save_path+"/model%09d.model"%it);

@@ -12,7 +12,7 @@ from torch.cuda.amp import autocast, GradScaler
 
 class SpeakerNet(nn.Module):
 
-    def __init__(self, model, optimizer, scheduler, trainfunc, **kwargs):
+    def __init__(self, model, optimizer, scheduler, trainfunc, tbxwriter=None, **kwargs):
         super(SpeakerNet, self).__init__();
 
         self.scaler = GradScaler()
