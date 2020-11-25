@@ -58,6 +58,7 @@ parser.add_argument('--initial_model',  type=str,   default="",     help='Initia
 ## Training and test data
 parser.add_argument('--train_list',     type=str,   default="/workspace/DATASET/server9_ssd/train_list.txt",     help='Train list');
 parser.add_argument('--test_list',      type=str,   default="/workspace/DATASET/server9_ssd/veri_test2.txt",     help='Evaluation list');
+parser.add_argument('--enroll_list',    type=str,   default="",     help='Enroll list');
 parser.add_argument('--train_path',     type=str,   default="/workspace/DATASET/server9_ssd/vox2/dev/aac", help='Absolute path to the train set');
 parser.add_argument('--test_path',      type=str,   default="/workspace/DATASET/server9/voxceleb/vox1/test/wav", help='Absolute path to the test set');
 parser.add_argument('--musan_path',     type=str,   default="/workspace/DATASET/server9_ssd/musan_split", help='Absolute path to the test set');
@@ -82,6 +83,7 @@ parser.add_argument('--GPU',            type=str,   default="4");
 
 
 ## For test only
+parser.add_argument('--distance_m',     type=str, default="L2", help='Eval distance metric')
 parser.add_argument('--eval', dest='eval', action='store_true', help='Eval only')
 
 args = parser.parse_args();
