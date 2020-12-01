@@ -134,7 +134,7 @@ if not args.amp:
 else:
     SpeakerNet = importlib.import_module('SpeakerNet_amp').__getattribute__('SpeakerNet')
 
-s = SpeakerNet(tbxwriter=tbxwriter, **vars(args));
+s = SpeakerNet(tbxwriter=tbxwriter, **vars(args))
 
 it          = 1;
 prevloss    = float("inf");
@@ -157,7 +157,13 @@ elif(args.initial_model != ""):
 ## Evaluation code
 if args.eval == True:
         
-    sc, lab, trials = s.evaluateFromList(args.test_list, print_interval=100, test_path=args.test_path, eval_frames=args.eval_frames)
+    sc, lab, trials = s.evaluateFromList(args.test_list, distance_m=arg.distance_m, print_interval=100, \
+    test_path=args.test_path, eval_frames=args.eval_frames)
+
+    # sc, lab, trials = s.evaluateFromListAndDict(listfilename=args.test_list, enrollfilename=args.enroll_list, \
+    # distance_m=arg.distance_m, print_interval=100, \
+    # test_path=args.test_path, eval_frames=args.eval_frames)
+
     result = tuneThresholdfromScore_std(sc, lab);
     print('EER %2.4f'%result[1])
 
@@ -182,42 +188,54 @@ scorefile = open(result_save_path+"/scores.txt", "a+");
 
 scorefile.write("GPU %s\n"%(GPU_SETTING))
 for items in vars(args):
-    print(items, vars(args)[items]);
-    scorefile.write('%s %s\n'%(items, vars(args)[items]));
+    print(items, vars(args)[items])
+    scorefile.write('%s %s\n'%(items, vars(args)[items]))
 scorefile.flush()
 
 ## Initialise data loader
-trainLoader = get_data_loader(args.train_list, **vars(args));
+trainLoader = get_data_loader(args.train_list, **vars(args))
 
 while(1):   
 
     clr = [x['lr'] for x in s.__optimizer__.param_groups]
 
-    print(time.strftime("%Y-%m-%d %H:%M:%S"), it, "Training %s with LR %f..."%(args.model,max(clr)));
+    print(time.strftime("%Y-%m-%d %H:%M:%S"), it, "Training %s with LR %f..."%(args.model,max(clr)))
 
     ## Train network
-    loss, traineer, stop = s.train_network(loader=trainLoader);
+    loss, traineer, stop = s.train_network(loader=trainLoader)
 
     ## Validate and save
     if it % args.test_interval == 0 or stop == True:
 
-        print(time.strftime("%Y-%m-%d %H:%M:%S"), it, "Evaluating...");
+        print(time.strftime("%Y-%m-%d %H:%M:%S"), it, "Evaluating...")
 
-        sc, lab, _ = s.evaluateFromList(args.test_list, print_interval=100, test_path=args.test_path, eval_frames=args.eval_frames)
-        result = tuneThresholdfromScore_std(sc, lab);
+        sc, lab, trials = s.evaluateFromList(args.test_list, distance_m=arg.distance_m, print_interval=100, \
+        test_path=args.test_path, eval_frames=args.eval_frames)
+
+        # sc, lab, trials = s.evaluateFromListAndDict(listfilename=args.test_list, enrollfilename=args.enroll_list, \
+        # distance_m=arg.distance_m, print_interval=100, \
+        # test_path=args.test_path, eval_frames=args.eval_frames)
+
+        result = tuneThresholdfromScore_std(sc, lab)
 
         min_eer.append(result[1])
 
-        print(time.strftime("%Y-%m-%d %H:%M:%S"), "LR %f, TEER/TAcc %2.2f, TLOSS %f, VEER %2.4f, MINEER %2.4f"%( max(clr), traineer, loss, result[1], min(min_eer)));
-        scorefile.write("IT %d, LR %f, TEER/TAcc %2.2f, TLOSS %f, VEER %2.4f, MINEER %2.4f\n"%(it, max(clr), traineer, loss, result[1], min(min_eer)));
-
-        training_utils.vox1_o_ASV_step_fitlog(result[1], result[-2], result[-1], it)
-        if result[1] == min(min_eer):
-            training_utils.vox1_o_ASV_best_fitlog(result[1], result[-2], result[-1])
-        
+        print(time.strftime("%Y-%m-%d %H:%M:%S"), "LR %f, TEER/TAcc %2.2f, TLOSS %f, VEER %2.4f, MINEER %2.4f"%( max(clr), traineer, loss, result[1], min(min_eer)))
+        scorefile.write("IT %d, LR %f, TEER/TAcc %2.2f, TLOSS %f, VEER %2.4f, MINEER %2.4f\n"%(it, max(clr), traineer, loss, result[1], min(min_eer)))
         scorefile.flush()
 
-        s.saveParameters(model_save_path+"/model%09d.model"%it);
+        ## Add fitlog
+        training_utils.vox1_o_ASV_step_fitlog(result[1], result[-2], result[-1], it)
+
+        ## If best add best fitlog and log scores
+        if result[1] == min(min_eer):
+            training_utils.vox1_o_ASV_best_fitlog(result[1], result[-2], result[-1])
+            
+            with open(result_save_path+"/model%09d.vox1osc"%it,'w') as outfile:
+                for vi, val in enumerate(sc):
+                    outfile.write('%.4f %s\n'%(val,trials[vi]))
+
+        s.saveParameters(model_save_path+"/model%09d.model"%it)
         
         with open(model_save_path+"/model%09d.eer"%it, 'w') as eerfile:
             eerfile.write('%.4f'%result[1])
@@ -226,16 +244,15 @@ while(1):
             quit()
 
     else:
-
-        print(time.strftime("%Y-%m-%d %H:%M:%S"), "LR %f, TEER/TAcc %2.2f, TLOSS %f"%( max(clr), traineer, loss));
-        scorefile.write("IT %d, LR %f, TEER/TAcc %2.2f, TLOSS %f\n"%(it, max(clr), traineer, loss));
+        print(time.strftime("%Y-%m-%d %H:%M:%S"), "LR %f, TEER/TAcc %2.2f, TLOSS %f"%( max(clr), traineer, loss))
+        scorefile.write("IT %d, LR %f, TEER/TAcc %2.2f, TLOSS %f\n"%(it, max(clr), traineer, loss))
 
         scorefile.flush()
 
     if it >= args.max_epoch:
-        quit();
+        quit()
 
     it+=1;
-    print("");
+    print("")
 
-scorefile.close();
+scorefile.close()
