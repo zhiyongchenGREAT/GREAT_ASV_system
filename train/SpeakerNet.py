@@ -98,8 +98,11 @@ class SpeakerNet(nn.Module):
     ## Evaluate from list
     ## ===== ===== ===== ===== ===== ===== ===== =====
 
-    def evaluateFromList(self, listfilename, print_interval=100, test_path='', num_eval=10, eval_frames=None):
-        
+    def evaluateFromList(self, listfilename, distance_m='L2', print_interval=100, test_path='', num_eval=10, eval_frames=None):
+        print('Evaluating from trial file: %s'%(listfilename))
+        assert distance_m in ['L2', 'cosine']
+        print('Distance metric: %s'%(distance_m))
+
         self.eval();
         
         lines       = []
@@ -163,9 +166,12 @@ class SpeakerNet(nn.Module):
                 ref_feat = F.normalize(ref_feat, p=2, dim=1)
                 com_feat = F.normalize(com_feat, p=2, dim=1)
 
-            dist = F.pairwise_distance(ref_feat.unsqueeze(-1), com_feat.unsqueeze(-1).transpose(0,2)).detach().cpu().numpy();
-
-            score = -1 * numpy.mean(dist);
+            if distance_m == 'L2':
+                dist = F.pairwise_distance(ref_feat.unsqueeze(-1), com_feat.unsqueeze(-1).transpose(0,2)).detach().cpu().numpy();
+                score = -1 * numpy.mean(dist);
+            elif distance_m == 'cosine':
+                dist = F.cosine_similarity(ref_feat.unsqueeze(-1), com_feat.unsqueeze(-1).transpose(0,2)).detach().cpu().numpy();
+                score = numpy.mean(dist);
 
             all_scores.append(score);  
             all_labels.append(int(data[0]));
@@ -174,6 +180,133 @@ class SpeakerNet(nn.Module):
             if idx % print_interval == 0:
                 telapsed = time.time() - tstart
                 sys.stdout.write("\rComputing %d of %d: %.2f Hz"%(idx,len(lines),idx/telapsed));
+                sys.stdout.flush();
+
+        print('\n')
+
+        return (all_scores, all_labels, all_trials);
+
+    ## ===== ===== ===== ===== ===== ===== ===== =====
+    ## Evaluate from list and dict
+    ## ===== ===== ===== ===== ===== ===== ===== =====
+
+    def evaluateFromListAndDict(self, listfilename, enrollfilename, distance_m, print_interval=100, test_path='', num_eval=10, eval_frames=None):
+        print('Evaluating from trial file: %s'%(listfilename))
+        print('Enroll from file: %s'%(enrollfilename))
+        assert distance_m in ['L2', 'cosine']
+        print('Distance metric: %s'%(distance_m))
+        
+        self.eval();
+        
+        trial_lines        = []
+        trial_files        = []
+        enroll_files       = {}
+        enroll_feats       = {}
+        trial_feats         = {}
+
+        ## Read all enroll lines
+        with open(enrollfilename) as listfile:
+            while True:
+                line = listfile.readline();
+                if (not line):
+                    break;
+
+                data = line.split();
+
+                ## Enroll file should have line length >= 2
+                assert len(data) >= 2
+
+                enroll_files[data[0]] = data[1:]
+
+        ## Extract all features to enroll_feats
+        tstart = time.time()
+
+        for idx, enroll_id in enumerate(enroll_files):
+            for file in enroll_files[enroll_id]:
+
+                inp1 = torch.FloatTensor(loadWAV(os.path.join(test_path,file), eval_frames, evalmode=True, num_eval=num_eval)).cuda()
+
+                ref_feat = self.__S__.forward(inp1).detach().cpu()
+                
+                if enroll_id not in enroll_feats.keys():
+                    enroll_feats[enroll_id] = ref_feat
+                else:
+                    enroll_feats[enroll_id] = numpy.append(enroll_feats[enroll_id], ref_feat, axis=0)
+
+            telapsed = time.time() - tstart
+
+            if idx % print_interval == 0:
+                sys.stdout.write("\rEnroll Reading %d of %d: %.2f Hz, embedding size %d"%(idx,len(enroll_files),idx/telapsed,ref_feat.size()[1]));
+
+        ## Read all trial lines
+        with open(listfilename) as listfile:
+            while True:
+                line = listfile.readline();
+                if (not line):
+                    break;
+
+                data = line.split();
+
+                ## Append random label if missing
+                if len(data) == 2: data = [random.randint(0,1)] + data
+
+                trial_files.append(data[2])
+                trial_lines.append(line)
+
+        setfiles = list(set(trial_files))
+        setfiles.sort()
+
+        ## Extract all features to trial_feats
+        tstart = time.time()
+
+        for idx, file in enumerate(setfiles):
+
+            inp1 = torch.FloatTensor(loadWAV(os.path.join(test_path,file), eval_frames, evalmode=True, num_eval=num_eval)).cuda()
+
+            ref_feat = self.__S__.forward(inp1).detach().cpu()
+
+            trial_feats[file]     = ref_feat
+
+            telapsed = time.time() - tstart
+
+            if idx % print_interval == 0:
+                sys.stdout.write("\rReading %d of %d: %.2f Hz, embedding size %d"%(idx,len(setfiles),idx/telapsed,ref_feat.size()[1]));
+
+        print('')
+        all_scores = [];
+        all_labels = [];
+        all_trials = [];
+        tstart = time.time()
+
+        ## Read files and compute all scores
+        for idx, line in enumerate(trial_lines):
+
+            data = line.split();
+
+            ## Append random label if missing
+            if len(data) == 2: data = [random.randint(0,1)] + data
+
+            ref_feat = enroll_feats[data[1]].cuda()
+            com_feat = trial_feats[data[2]].cuda()
+
+            if self.__L__.test_normalize:
+                ref_feat = F.normalize(ref_feat, p=2, dim=1)
+                com_feat = F.normalize(com_feat, p=2, dim=1)
+
+            if distance_m == 'L2':
+                dist = F.pairwise_distance(ref_feat.unsqueeze(-1), com_feat.unsqueeze(-1).transpose(0,2)).detach().cpu().numpy();
+                score = -1 * numpy.mean(dist);
+            elif distance_m == 'cosine':
+                dist = F.cosine_similarity(ref_feat.unsqueeze(-1), com_feat.unsqueeze(-1).transpose(0,2)).detach().cpu().numpy();
+                score = numpy.mean(dist);
+
+            all_scores.append(score);  
+            all_labels.append(int(data[0]));
+            all_trials.append(data[1]+" "+data[2])
+
+            if idx % print_interval == 0:
+                telapsed = time.time() - tstart
+                sys.stdout.write("\rComputing %d of %d: %.2f Hz"%(idx, len(lines), idx/telapsed));
                 sys.stdout.flush();
 
         print('\n')
@@ -200,6 +333,25 @@ class SpeakerNet(nn.Module):
     ## ===== ===== ===== ===== ===== ===== ===== =====
     ## Load parameters
     ## ===== ===== ===== ===== ===== ===== ===== =====
+
+    def loadParameters_old(self, path, only_para=True):
+
+        self_state = self.state_dict();
+        loaded_state = torch.load(path);
+        for name, param in loaded_state.items():
+            origname = name;
+            if name not in self_state:
+                name = name.replace("module.", "");
+
+                if name not in self_state:
+                    print("%s is not in the model."%origname);
+                    continue;
+
+            if self_state[name].size() != loaded_state[origname].size():
+                print("Wrong parameter length: %s, model: %s, loaded: %s"%(origname, self_state[name].size(), loaded_state[origname].size()));
+                continue;
+
+            self_state[name].copy_(param);
 
     def loadParameters(self, path, only_para=False):
 

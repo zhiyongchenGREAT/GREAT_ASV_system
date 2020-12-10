@@ -14,9 +14,9 @@ def standard_fitlog_init(fitlogdir, train_name, fitlog_DATASET, fitlog_Desc, **k
     fitlog.add_other({"DATASET": fitlog_DATASET})
 
 def vox1_o_ASV_step_fitlog(eer, minc_1, minc_2, step):
-    fitlog.add_metric({"Voxceleb_O":{"EER":eer}}, step=total_step)
-    fitlog.add_metric({"Voxceleb_O":{"MINC_0.01":minc_1}}, step=total_step)
-    fitlog.add_metric({"Voxceleb_O":{"MINC_0.001":minc_2}}, step=total_step)
+    fitlog.add_metric({"Voxceleb_O":{"EER":eer}}, step=step)
+    fitlog.add_metric({"Voxceleb_O":{"MINC_0.01":minc_1}}, step=step)
+    fitlog.add_metric({"Voxceleb_O":{"MINC_0.001":minc_2}}, step=step)
 
 def vox1_o_ASV_best_fitlog(eer, minc_1, minc_2):
     fitlog.add_best_metric({"Voxceleb_O":{"EER":eer}})

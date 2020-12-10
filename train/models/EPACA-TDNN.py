@@ -121,10 +121,10 @@ class ECAPA_TDNN(nn.Module):
     def __init__(self, in_channels=40, channels=512, embd_dim=192):
         super().__init__()
 
-        self.instancenorm   = nn.InstanceNorm1d(40)
+        self.instancenorm   = nn.InstanceNorm1d(in_channels)
         self.torchfb        = torch.nn.Sequential(
                 PreEmphasis(),
-                torchaudio.transforms.MelSpectrogram(sample_rate=16000, n_fft=512, win_length=400, hop_length=160, window_fn=torch.hamming_window, n_mels=40)
+                torchaudio.transforms.MelSpectrogram(sample_rate=16000, n_fft=512, win_length=400, hop_length=160, window_fn=torch.hamming_window, n_mels=in_channels)
                 )
 
         self.layer1 = Conv1dReluBn(in_channels, channels, kernel_size=5, padding=2)
@@ -163,8 +163,8 @@ class ECAPA_TDNN(nn.Module):
 
         return out
       
-def MainModel(**kwargs):
-    model = ECAPA_TDNN(in_channels=40, channels=1024, embd_dim=192)
+def MainModel(n_mels, nOut=192, **kwargs):
+    model = ECAPA_TDNN(in_channels=n_mels, channels=1024, embd_dim=nOut)
     return model
 
 

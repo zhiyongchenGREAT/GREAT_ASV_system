@@ -7,12 +7,13 @@ import numpy
 import pdb
 import torch
 import glob
-from tuneThreshold import tuneThresholdfromScore
+from tuneThreshold import tuneThresholdfromScore_std
 # from SpeakerNet import SpeakerNet
 from DatasetLoader import get_data_loader
 import os
 import shutil
 import training_utils
+import fitlog
 
 
 parser = argparse.ArgumentParser(description = "SpeakerNet");
@@ -21,20 +22,20 @@ parser.add_argument('--config',         type=str,   default=None,   help='Config
 
 ## Data loader
 parser.add_argument('--max_frames',     type=int,   default=300,    help='Input length to the network for training');
-parser.add_argument('--eval_frames',    type=int,   default=400,    help='Input length to the network for testing; 0 uses the whole files');
+parser.add_argument('--eval_frames',    type=int,   default=0,    help='Input length to the network for testing; 0 uses the whole files');
 parser.add_argument('--batch_size',     type=int,   default=128,    help='Batch size, number of speakers per batch');
 parser.add_argument('--max_seg_per_spk', type=int,  default=100,    help='Maximum number of utterances per speaker per epoch');
 parser.add_argument('--nDataLoaderThread', type=int, default=5,     help='Number of loader threads');
 parser.add_argument('--augment',        type=bool,  default=True,  help='Augment input')
 
 ## Training details
-parser.add_argument('--test_interval',  type=int,   default=34,     help='Test and save every [test_interval] epochs');
-parser.add_argument('--max_epoch',      type=int,   default=136,    help='Maximum number of epochs');
+parser.add_argument('--test_interval',  type=int,   default=20,     help='Test and save every [test_interval] epochs');
+parser.add_argument('--max_epoch',      type=int,   default=200,    help='Maximum number of epochs');
 parser.add_argument('--trainfunc',      type=str,   default="",     help='Loss function');
 
 ## Optimizer
 parser.add_argument('--optimizer',      type=str,   default="sgd", help='sgd or adam');
-parser.add_argument('--scheduler',      type=str,   default="steplr", help='Learning rate scheduler');
+parser.add_argument('--scheduler',      type=str,   default="cosine", help='Learning rate scheduler');
 parser.add_argument('--lr_step',        type=str,   default="iteration", help='Learning rate scheduler');
 parser.add_argument('--lr',             type=float, default=0.01,  help='Learning rate');
 parser.add_argument('--base_lr',        type=float, default=1e-5,  help='Learning rate min');
@@ -56,34 +57,43 @@ parser.add_argument('--initial_model',  type=str,   default="",     help='Initia
 # parser.add_argument('--save_path',      type=str,   default="", help='Path for model and logs');
 
 ## Training and test data
-parser.add_argument('--train_list',     type=str,   default="/workspace/DATASET/server9_ssd/train_list.txt",     help='Train list');
-parser.add_argument('--test_list',      type=str,   default="/workspace/DATASET/server9_ssd/veri_test2.txt",     help='Evaluation list');
+parser.add_argument('--train_list',     type=str,   default="/workspace/DATASET/server9_ssd/voxceleb/vox2_trainlist.txt",     help='Train list');
+parser.add_argument('--test_list',      type=str,   default="/workspace/DATASET/server9_ssd/voxceleb/vox_o_triallist.txt",     help='Evaluation list');
 parser.add_argument('--enroll_list',    type=str,   default="",     help='Enroll list');
-parser.add_argument('--train_path',     type=str,   default="/workspace/DATASET/server9_ssd/vox2/dev/aac", help='Absolute path to the train set');
-parser.add_argument('--test_path',      type=str,   default="/workspace/DATASET/server9/voxceleb/vox1/test/wav", help='Absolute path to the test set');
+parser.add_argument('--train_path',     type=str,   default="/workspace/DATASET/server9_ssd/voxceleb", help='Absolute path to the train set');
+parser.add_argument('--test_path',      type=str,   default="/workspace/DATASET/server9_ssd/voxceleb", help='Absolute path to the test set');
 parser.add_argument('--musan_path',     type=str,   default="/workspace/DATASET/server9_ssd/musan_split", help='Absolute path to the test set');
 parser.add_argument('--rir_path',       type=str,   default="/workspace/DATASET/server9_ssd/RIRS_NOISES/simulated_rirs", help='Absolute path to the test set');
+
+# ## Training and test data
+# parser.add_argument('--train_list',     type=str,   default="/workspace/DATASET/server9_ssd/train_list.txt",     help='Train list');
+# parser.add_argument('--test_list',      type=str,   default="/workspace/DATASET/server9_ssd/voxceleb/voxsrc2020_final_pairs.txt",     help='Evaluation list');
+# parser.add_argument('--enroll_list',    type=str,   default="",     help='Enroll list');
+# parser.add_argument('--train_path',     type=str,   default="/workspace/DATASET/server9_ssd/voxceleb", help='Absolute path to the train set');
+# parser.add_argument('--test_path',      type=str,   default="/workspace/DATASET/server9_ssd/voxceleb/voxsrc2020", help='Absolute path to the test set');
+# parser.add_argument('--musan_path',     type=str,   default="/workspace/DATASET/server9_ssd/musan_split", help='Absolute path to the test set');
+# parser.add_argument('--rir_path',       type=str,   default="/workspace/DATASET/server9_ssd/RIRS_NOISES/simulated_rirs", help='Absolute path to the test set');
 
 ## Model definition
 parser.add_argument('--n_mels',         type=int,   default=40,     help='Number of mel filterbanks');
 parser.add_argument('--log_input',      type=bool,  default=True,  help='Log input features')
 parser.add_argument('--model',          type=str,   default="",     help='Name of model definition');
 parser.add_argument('--encoder_type',   type=str,   default="",  help='Type of encoder');
-parser.add_argument('--nOut',           type=int,   default=512,    help='Embedding size in the last FC layer');
+parser.add_argument('--nOut',           type=int,   default=192,    help='Embedding size in the last FC layer');
 
 ## Training Control
 parser.add_argument('--trainlogs',      type=str,   default="/workspace/LOGS_OUTPUT/tmp_logs/train_logs_201120");
 parser.add_argument('--fitlogdir',      type=str,   default="/workspace/LOGS_OUTPUT/tmp_logs/ASV_LOGS_201120");
 parser.add_argument('--tbxdir',         type=str,   default="/workspace/LOGS_OUTPUT/tmp_logs/tbx")
 parser.add_argument('--fitlog_DATASET', type=str,   default="otf_vox2_aug");
-parser.add_argument('--fitlog_Desc',    type=str,   default="this is a test run");
-parser.add_argument('--train_name',     type=str,   default="train_test");
+parser.add_argument('--fitlog_Desc',    type=str,   default="vox2_newsystem_base_epacatdnn");
+parser.add_argument('--train_name',     type=str,   default="vox2_newsystem_base_epacatdnn");
 parser.add_argument('--amp',            type=bool,  default=True);
 parser.add_argument('--GPU',            type=str,   default="4");
 
 
 ## For test only
-parser.add_argument('--distance_m',     type=str, default="L2", help='Eval distance metric')
+parser.add_argument('--distance_m',     type=str, default="cosine", help='Eval distance metric')
 parser.add_argument('--eval', dest='eval', action='store_true', help='Eval only')
 
 args = parser.parse_args();
@@ -112,6 +122,10 @@ os.environ['CUDA_VISIBLE_DEVICES'] = args.GPU
 model_save_path     = os.path.join(args.trainlogs, args.train_name, "model")
 result_save_path    = os.path.join(args.trainlogs, args.train_name, "result")
 
+
+if os.path.isdir(os.path.join(args.trainlogs, args.train_name)):
+    shutil.rmtree(os.path.join(args.trainlogs, args.train_name))
+
 if not(os.path.exists(model_save_path)):
     os.makedirs(model_save_path)
         
@@ -119,7 +133,7 @@ if not(os.path.exists(result_save_path)):
     os.makedirs(result_save_path)
 
 ## backup train dir
-train_file_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+train_file_dir = os.path.dirname(os.path.realpath(__file__))
 shutil.copytree(train_file_dir, os.path.join(args.trainlogs, args.train_name, 'code'))
 
 ## fitlog
@@ -151,46 +165,48 @@ if len(modelfiles) >= 1:
     # Note iteration is renewed to next, but total_step inherits from previous
     it = int(os.path.splitext(os.path.basename(modelfiles[-1]))[0][5:]) + 1
 elif(args.initial_model != ""):
-    s.loadParameters(args.initial_model, only_para=True);
-    print("Model %s loaded!"%args.initial_model);
-        
-## Evaluation code
-if args.eval == True:
-        
-    sc, lab, trials = s.evaluateFromList(args.test_list, distance_m=arg.distance_m, print_interval=100, \
-    test_path=args.test_path, eval_frames=args.eval_frames)
+    ## use new load models
+    # s.loadParameters(args.initial_model, only_para=True);
+    ## use old load models
+    s.loadParameters_old(args.initial_model, only_para=True);
+    print("Model %s loaded!"%args.initial_model);        
 
-    # sc, lab, trials = s.evaluateFromListAndDict(listfilename=args.test_list, enrollfilename=args.enroll_list, \
-    # distance_m=arg.distance_m, print_interval=100, \
-    # test_path=args.test_path, eval_frames=args.eval_frames)
-
-    result = tuneThresholdfromScore_std(sc, lab);
-    print('EER %2.4f'%result[1])
-
-    ## Save scores
-    print('Type desired file name to save scores. Otherwise, leave blank.')
-    userinp = input()
-
-    while True:
-        if userinp == '':
-            quit();
-        elif os.path.exists(userinp) or '.' not in userinp:
-            print('Invalid file name %s. Try again.'%(userinp))
-            userinp = input()
-        else:
-            with open(userinp,'w') as outfile:
-                for vi, val in enumerate(sc):
-                    outfile.write('%.4f %s\n'%(val,trials[vi]))
-            quit();
 
 ## Write args to scorefile
 scorefile = open(result_save_path+"/scores.txt", "a+");
 
-scorefile.write("GPU %s\n"%(GPU_SETTING))
 for items in vars(args):
     print(items, vars(args)[items])
     scorefile.write('%s %s\n'%(items, vars(args)[items]))
 scorefile.flush()
+
+print('\n\n')
+
+## Evaluation code
+if args.eval == True:
+    if args.enroll_list == '':   
+        sc, lab, trials = s.evaluateFromList(args.test_list, distance_m=args.distance_m, print_interval=100, \
+        test_path=args.test_path, eval_frames=args.eval_frames)
+    else:
+        sc, lab, trials = s.evaluateFromListAndDict(listfilename=args.test_list, enrollfilename=args.enroll_list, \
+        distance_m=args.distance_m, print_interval=100, \
+        test_path=args.test_path, eval_frames=args.eval_frames)
+
+    result = tuneThresholdfromScore_std(sc, lab);
+    print('EER %2.4f MINC@0.01 %.5f MINC@0.001 %.5f'%(result[1], result[-2], result[-1]))
+    scorefile.write('\nEER %2.4f MINC@0.01 %.5f MINC@0.001 %.5f\n'%(result[1], result[-2], result[-1]))
+    scorefile.flush()
+
+    fitlog.add_best_metric({"Voxceleb_O":{"EER":result[1]}})
+    fitlog.add_best_metric({"Voxceleb_O":{"MINC_0.01":result[-2]}})
+    fitlog.add_best_metric({"Voxceleb_O":{"MINC_0.001":result[-1]}})
+
+    ## Save scores
+    print('Auto save scores to results dir.')
+    with open(result_save_path+"/eval_scores.txt",'w') as outfile:
+        for vi, val in enumerate(sc):
+            outfile.write('%.4f %s\n'%(val,trials[vi]))    
+    quit()
 
 ## Initialise data loader
 trainLoader = get_data_loader(args.train_list, **vars(args))
@@ -209,7 +225,7 @@ while(1):
 
         print(time.strftime("%Y-%m-%d %H:%M:%S"), it, "Evaluating...")
 
-        sc, lab, trials = s.evaluateFromList(args.test_list, distance_m=arg.distance_m, print_interval=100, \
+        sc, lab, trials = s.evaluateFromList(args.test_list, distance_m=args.distance_m, print_interval=100, \
         test_path=args.test_path, eval_frames=args.eval_frames)
 
         # sc, lab, trials = s.evaluateFromListAndDict(listfilename=args.test_list, enrollfilename=args.enroll_list, \

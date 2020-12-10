@@ -33,6 +33,7 @@ class SpeakerNet(nn.Module):
         assert self.lr_step in ['epoch', 'iteration']
         self.total_step = 0
         self.stop = False
+        self.tbxwriter = tbxwriter
 
     ## ===== ===== ===== ===== ===== ===== ===== =====
     ## Train network
@@ -40,13 +41,13 @@ class SpeakerNet(nn.Module):
 
     def train_network(self, loader):
 
-        self.train();
+        self.train()
 
         stepsize = loader.batch_size;
 
-        counter = 0;
-        index   = 0;
-        loss    = 0;
+        counter = 0
+        index   = 0
+        loss    = 0
         top1    = 0     # EER or accuracy
 
         tstart = time.time()
@@ -55,11 +56,11 @@ class SpeakerNet(nn.Module):
 
             data = data.transpose(0,1)
 
-            self.__optimizer__.zero_grad();
+            self.__optimizer__.zero_grad()
 
             feat = []
             for inp in data:
-                outp      = self.__S__.forward(inp.cuda())
+                outp = self.__S__.forward(inp.cuda())
                 feat.append(outp)
 
             feat = torch.stack(feat,dim=1).squeeze()
@@ -69,10 +70,10 @@ class SpeakerNet(nn.Module):
             with autocast(enabled=True):
                 nloss, prec1 = self.__L__.forward(feat,label)
 
-            loss    += nloss.detach().cpu();
+            loss    += nloss.detach().cpu()
             top1    += prec1
-            counter += 1;
-            index   += stepsize;
+            counter += 1
+            index   += stepsize
 
             self.scaler.scale(nloss).backward()
             self.scaler.step(self.__optimizer__)
@@ -80,9 +81,14 @@ class SpeakerNet(nn.Module):
 
             telapsed = time.time() - tstart
             tstart = time.time()
-            sys.stdout.write("\rTotal_step (%d) Processing (%d) "%(index, self.total_step));
-            sys.stdout.write("Loss %f TEER/TAcc %2.3f%% - %.2f Hz "%(loss/counter, top1/counter, stepsize/telapsed));
-            sys.stdout.flush();
+            clr = [x['lr'] for x in self.__optimizer__.param_groups]
+            sys.stdout.write("\rTotal_step (%d) Processing (%d) "%(self.total_step, index))
+            sys.stdout.write("Loss %f Lr %.5f TEER/TAcc %2.3f%% - %.2f Hz "%(loss/counter, max(clr), top1/counter, stepsize/telapsed))
+            sys.stdout.flush()
+
+            self.tbxwriter.add_scalar('Trainloss', nloss.detach().cpu(), self.total_step)
+            self.tbxwriter.add_scalar('TrainAcc', prec1, self.total_step)
+            self.tbxwriter.add_scalar('Lr', max(clr), self.total_step)
 
             if self.lr_step == 'iteration': self.__scheduler__.step()
 
@@ -94,7 +100,7 @@ class SpeakerNet(nn.Module):
 
         if self.lr_step == 'epoch': self.__scheduler__.step()
 
-        sys.stdout.write("\n");
+        sys.stdout.write("\n")
         
         return (loss/counter, top1/counter, self.stop)
 
@@ -103,9 +109,12 @@ class SpeakerNet(nn.Module):
     ## Evaluate from list
     ## ===== ===== ===== ===== ===== ===== ===== =====
 
-    def evaluateFromList(self, listfilename, print_interval=100, test_path='', num_eval=10, eval_frames=None):
-        
-        self.eval();
+    def evaluateFromList(self, listfilename, distance_m='L2', print_interval=100, test_path='', num_eval=10, eval_frames=None):
+        print('Evaluating from trial file: %s'%(listfilename))
+        assert distance_m in ['L2', 'cosine']
+        print('Distance metric: %s'%(distance_m))
+
+        self.eval()
         
         lines       = []
         files       = []
@@ -115,9 +124,9 @@ class SpeakerNet(nn.Module):
         ## Read all lines
         with open(listfilename) as listfile:
             while True:
-                line = listfile.readline();
+                line = listfile.readline()
                 if (not line):
-                    break;
+                    break
 
                 data = line.split();
 
@@ -145,45 +154,203 @@ class SpeakerNet(nn.Module):
             telapsed = time.time() - tstart
 
             if idx % print_interval == 0:
-                sys.stdout.write("\rReading %d of %d: %.2f Hz, embedding size %d"%(idx,len(setfiles),idx/telapsed,ref_feat.size()[1]));
+                sys.stdout.write("\rReading %d of %d: %.2f Hz, embedding size %d"%(idx,len(setfiles),idx/telapsed,ref_feat.size()[1]))
 
-        print('')
-        all_scores = [];
-        all_labels = [];
-        all_trials = [];
+        ## Compute mean
+        mean_vector = torch.zeros([192])
+        for count, i in enumerate(feats):
+            mean_vector = mean_vector + torch.mean(feats[i], axis=0)
+        mean_vector = mean_vector / (count+1)
+
+
+        print('mean vec: ', mean_vector.shape)
+
+        all_scores = []
+        all_labels = []
+        all_trials = []
         tstart = time.time()
 
         ## Read files and compute all scores
         for idx, line in enumerate(lines):
 
-            data = line.split();
+            data = line.split()
 
             ## Append random label if missing
             if len(data) == 2: data = [random.randint(0,1)] + data
 
+
             ref_feat = feats[data[1]].cuda()
             com_feat = feats[data[2]].cuda()
+            # ref_feat = (feats[data[1]] - mean_vector).cuda() 
+            # com_feat = (feats[data[2]] - mean_vector).cuda()
 
             if self.__L__.test_normalize:
                 ref_feat = F.normalize(ref_feat, p=2, dim=1)
                 com_feat = F.normalize(com_feat, p=2, dim=1)
 
-            dist = F.pairwise_distance(ref_feat.unsqueeze(-1), com_feat.unsqueeze(-1).transpose(0,2)).detach().cpu().numpy();
+            if distance_m == 'L2':
+                dist = F.pairwise_distance(ref_feat.unsqueeze(-1), com_feat.unsqueeze(-1).transpose(0,2)).detach().cpu().numpy()
+                score = -1 * numpy.mean(dist)
+            elif distance_m == 'cosine':
+                dist = F.cosine_similarity(ref_feat.unsqueeze(-1), com_feat.unsqueeze(-1).transpose(0,2)).detach().cpu().numpy()
+                score = numpy.mean(dist)
 
-            score = -1 * numpy.mean(dist);
-
-            all_scores.append(score);  
-            all_labels.append(int(data[0]));
+            all_scores.append(score)
+            all_labels.append(int(data[0]))
             all_trials.append(data[1]+" "+data[2])
 
-            if idx % print_interval == 0:
+            if idx % (print_interval*100) == 0:
                 telapsed = time.time() - tstart
-                sys.stdout.write("\rComputing %d of %d: %.2f Hz"%(idx,len(lines),idx/telapsed));
-                sys.stdout.flush();
+                sys.stdout.write("\rComputing %d of %d: %.2f Hz"%(idx,len(lines),idx/telapsed))
+                sys.stdout.flush()
 
         print('\n')
 
         return (all_scores, all_labels, all_trials);
+
+    ## ===== ===== ===== ===== ===== ===== ===== =====
+    ## Evaluate from list and dict
+    ## ===== ===== ===== ===== ===== ===== ===== =====
+
+    def evaluateFromListAndDict(self, listfilename, enrollfilename, distance_m, print_interval=100, test_path='', num_eval=10, eval_frames=None):
+        print('Evaluating from trial file: %s'%(listfilename))
+        print('Enroll from file: %s'%(enrollfilename))
+        assert distance_m in ['L2', 'cosine']
+        print('Distance metric: %s'%(distance_m))
+        
+        self.eval()
+        
+        trial_lines        = []
+        trial_files        = []
+        enroll_files       = {}
+        enroll_feats       = {}
+        trial_feats         = {}
+
+        ## Read all enroll lines
+        with open(enrollfilename) as listfile:
+            while True:
+                line = listfile.readline()
+                if (not line):
+                    break
+
+                data = line.split();
+
+                ## Enroll file should have line length >= 2
+                assert len(data) >= 2
+
+                enroll_files[data[0]] = data[1:]
+
+        ## Extract all features to enroll_feats
+        tstart = time.time()
+
+        for idx, enroll_id in enumerate(enroll_files):
+            for file in enroll_files[enroll_id]:
+
+                inp1 = torch.FloatTensor(loadWAV(os.path.join(test_path,file), eval_frames, evalmode=True, num_eval=num_eval)).cuda()
+
+                ref_feat = self.__S__.forward(inp1).detach().cpu()
+                
+                if enroll_id not in enroll_feats.keys():
+                    enroll_feats[enroll_id] = ref_feat
+                else:
+                    enroll_feats[enroll_id] = torch.cat([enroll_feats[enroll_id], ref_feat], axis=0)
+
+            telapsed = time.time() - tstart
+
+            if idx % print_interval == 0:
+                sys.stdout.write("\rEnroll Reading %d of %d: %.2f Hz, embedding size %d"%(idx,len(enroll_files),idx/telapsed,ref_feat.size()[1]))
+                sys.stdout.flush()
+
+        ## Read all trial lines
+        with open(listfilename) as listfile:
+            while True:
+                line = listfile.readline()
+                if (not line):
+                    break
+
+                data = line.split();
+
+                ## Append random label if missing
+                if len(data) == 2: data = [random.randint(0,1)] + data
+
+                trial_files.append(data[2])
+                trial_lines.append(line)
+
+        setfiles = list(set(trial_files))
+        setfiles.sort()
+
+        ## Extract all features to trial_feats
+        tstart = time.time()
+
+        for idx, file in enumerate(setfiles):
+
+            inp1 = torch.FloatTensor(loadWAV(os.path.join(test_path,file), eval_frames, evalmode=True, num_eval=num_eval)).cuda()
+
+            ref_feat = self.__S__.forward(inp1).detach().cpu()
+
+            trial_feats[file]     = ref_feat
+
+            telapsed = time.time() - tstart
+
+            if idx % print_interval == 0:
+                sys.stdout.write("\rReading %d of %d: %.2f Hz, embedding size %d"%(idx,len(setfiles),idx/telapsed,ref_feat.size()[1]))
+                sys.stdout.flush()
+
+        print('')
+        all_scores = []
+        all_labels = []
+        all_trials = []
+        tstart = time.time()
+
+        ## Compute mean
+        mean_vector = torch.zeros([192])
+        for count1, i in enumerate(trial_feats):
+            mean_vector = mean_vector + torch.mean(trial_feats[i], axis=0)
+        for count2, i in enumerate(enroll_feats):
+            mean_vector = mean_vector + torch.mean(enroll_feats[i], axis=0)
+        mean_vector = mean_vector / (count1+1+count2+1)
+
+        print('mean vec: ', mean_vector.shape)
+
+        ## Read files and compute all scores
+        for idx, line in enumerate(trial_lines):
+
+            data = line.split()
+
+            ## Append random label if missing
+            if len(data) == 2: data = [random.randint(0,1)] + data
+
+            # ref_feat = enroll_feats[data[1]].cuda()
+
+            ref_feat = torch.mean(enroll_feats[data[1]], axis=0, keepdim=True).cuda()
+            com_feat = trial_feats[data[2]].cuda()
+
+            # ref_feat = (torch.mean(enroll_feats[data[1]], axis=0, keepdim=True) - mean_vector).cuda() 
+            # com_feat = (trial_feats[data[2]] - mean_vector).cuda()
+
+            if self.__L__.test_normalize:
+                ref_feat = F.normalize(ref_feat, p=2, dim=1)
+                com_feat = F.normalize(com_feat, p=2, dim=1)
+
+            if distance_m == 'L2':
+                dist = F.pairwise_distance(ref_feat.unsqueeze(-1), com_feat.unsqueeze(-1).transpose(0,2)).detach().cpu().numpy()
+                score = -1 * numpy.mean(dist)
+            elif distance_m == 'cosine':
+                dist = F.cosine_similarity(ref_feat.unsqueeze(-1), com_feat.unsqueeze(-1).transpose(0,2)).detach().cpu().numpy()
+                score = numpy.mean(dist)
+
+            all_scores.append(score)
+            all_labels.append(int(data[0]))
+            all_trials.append(data[1]+" "+data[2])
+
+            if idx % (print_interval*100) == 0:
+                telapsed = time.time() - tstart
+                sys.stdout.write("\rComputing %d of %d: %.2f Hz"%(idx, len(trial_lines), idx/telapsed))
+                sys.stdout.flush()
+
+        print('\n')
+
+        return (all_scores, all_labels, all_trials)
 
 
     ## ===== ===== ===== ===== ===== ===== ===== =====
@@ -194,8 +361,8 @@ class SpeakerNet(nn.Module):
 
         state = {
             'model': self.state_dict(),
-            'optimizer': optimizer.state_dict(),
-            'scheduler': scheduler.state_dict(),
+            'optimizer': self.__optimizer__.state_dict(),
+            'scheduler': self.__scheduler__.state_dict(),
             'total_step': self.total_step
             }
         
@@ -206,24 +373,43 @@ class SpeakerNet(nn.Module):
     ## Load parameters
     ## ===== ===== ===== ===== ===== ===== ===== =====
 
-    def loadParameters(self, path, only_para=False):
+    def loadParameters_old(self, path, only_para=True):
 
-        self_state = self.state_dict();
-        loaded_state = torch.load(path)['model'];
+        self_state = self.state_dict()
+        loaded_state = torch.load(path)
         for name, param in loaded_state.items():
-            origname = name;
+            origname = name
             if name not in self_state:
-                name = name.replace("module.", "");
+                name = name.replace("module.", "")
 
                 if name not in self_state:
-                    print("%s is not in the model."%origname);
-                    continue;
+                    print("%s is not in the model."%origname)
+                    continue
 
             if self_state[name].size() != loaded_state[origname].size():
-                print("Wrong parameter length: %s, model: %s, loaded: %s"%(origname, self_state[name].size(), loaded_state[origname].size()));
-                continue;
+                print("Wrong parameter length: %s, model: %s, loaded: %s"%(origname, self_state[name].size(), loaded_state[origname].size()))
+                continue
 
-            self_state[name].copy_(param);
+            self_state[name].copy_(param)
+
+    def loadParameters(self, path, only_para=False):
+
+        self_state = self.state_dict()
+        loaded_state = torch.load(path)['model']
+        for name, param in loaded_state.items():
+            origname = name
+            if name not in self_state:
+                name = name.replace("module.", "")
+
+                if name not in self_state:
+                    print("%s is not in the model."%origname)
+                    continue
+
+            if self_state[name].size() != loaded_state[origname].size():
+                print("Wrong parameter length: %s, model: %s, loaded: %s"%(origname, self_state[name].size(), loaded_state[origname].size()))
+                continue
+
+            self_state[name].copy_(param)
 
         if not only_para:    
             loaded_state = torch.load(path)['optimizer']
@@ -241,4 +427,4 @@ class SpeakerNet(nn.Module):
             self.total_step = torch.load(path)['total_step']
             print('Resume from step: %d'%(self.total_step))
         else:
-            print('Only params are loaded, start from beginning...')  
+            print('Only params are loaded, start from beginning...')
