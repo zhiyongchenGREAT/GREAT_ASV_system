@@ -180,7 +180,7 @@ for items in vars(args):
     scorefile.write('%s %s\n'%(items, vars(args)[items]))
 scorefile.flush()
 
-print('\n\n')
+print('\n')
 
 ## Evaluation code
 if args.eval == True:
@@ -268,7 +268,7 @@ while(1):
     if it >= args.max_epoch:
         quit()
 
-    it+=1;
+    it+=1
     print("")
 
 scorefile.close()
