@@ -9,15 +9,15 @@ from torch.nn import Parameter
 from models.ResNetBlocks import *
 from utils import PreEmphasis
 import os
-from inv_specaug import SpecAugment
+from .inv_specaug import SpecAugment
 
 class ResNetSE(nn.Module):
-    def __init__(self, block, layers, num_filters, nOut, spec_aug=False, encoder_type='SAP', n_mels=40, log_input=True, **kwargs):
+    def __init__(self, block, layers, num_filters, nOut, spec_aug, encoder_type='SAP', n_mels=40, log_input=True, **kwargs):
         super(ResNetSE, self).__init__()
 
         self.spec_aug = spec_aug
         if self.spec_aug:
-            spec_aug = SpecAugment(frequency=0.2, frame=0.0, rows=1, cols=1, random_rows=False, random_cols=False)
+            self.spec_aug_f = SpecAugment(frequency=0.2, frame=0.0, rows=1, cols=1, random_rows=False, random_cols=False)
 
         print('%s, Embedding size is %d, Encoder %s, Spec_aug %s.'%(os.path.basename(__file__), nOut, encoder_type, str(self.spec_aug)))
         
@@ -97,9 +97,9 @@ class ResNetSE(nn.Module):
                 x = self.torchfb(x)+1e-6
                 if self.log_input: x = x.log()
                 x = self.instancenorm(x)
-                if self.spec_aug:
+                if self.spec_aug self.training:
                     for i in x:
-                        _ = spec_aug(i)
+                        _ = self.spec_aug_f(i)
                 x = x.unsqueeze(1)
 
         x = self.conv1(x)
@@ -128,9 +128,9 @@ class ResNetSE(nn.Module):
         return x
 
 
-def MainModel(nOut=256, **kwargs):
+def MainModel(nOut, spec_aug, **kwargs):
     # Number of filters
     num_filters = [32, 64, 128, 256]
-    model = ResNetSE(SEBasicBlock, [3, 4, 6, 3], num_filters, nOut, **kwargs)
+    model = ResNetSE(SEBasicBlock, [3, 4, 6, 3], num_filters, nOut, spec_aug, **kwargs)
     return model
 

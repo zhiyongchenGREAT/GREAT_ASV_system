@@ -48,7 +48,7 @@ parser.add_argument('--lr_step',        type=str,   default="iteration", help='L
 parser.add_argument('--lr',             type=float, default=0.01,  help='Learning rate');
 parser.add_argument('--base_lr',        type=float, default=1e-5,  help='Learning rate min');
 parser.add_argument('--cycle_step',     type=int, default=None,  help='Learning rate cycle');
-parser.add_argument('--expected_step',  type=int, default=520000,  help='Total steps');
+parser.add_argument('--expected_step',  type=int, default=5200,  help='Total steps');
 parser.add_argument("--lr_decay",       type=float, default=0.25,   help='Learning rate decay every [test_interval] epochs');
 parser.add_argument('--weight_decay',   type=float, default=5e-4,      help='Weight decay in the optimizer');
 
@@ -79,14 +79,15 @@ parser.add_argument('--log_input',      type=bool,  default=True,  help='Log inp
 parser.add_argument('--model',          type=str,   default="",     help='Name of model definition');
 parser.add_argument('--encoder_type',   type=str,   default="",  help='Type of encoder');
 parser.add_argument('--nOut',           type=int,   default=192,    help='Embedding size in the last FC layer');
+parser.add_argument('--spec_aug',       type=bool,  default=True,    help='Use spec aug or not');
 
 ## Training Control
 parser.add_argument('--trainlogs',      type=str,   default="/workspace/LOGS_OUTPUT/tmp_logs/train_logs_201120");
 parser.add_argument('--fitlogdir',      type=str,   default="/workspace/LOGS_OUTPUT/tmp_logs/ASV_LOGS_201120");
 parser.add_argument('--tbxdir',         type=str,   default="/workspace/LOGS_OUTPUT/tmp_logs/tbx")
 parser.add_argument('--fitlog_DATASET', type=str,   default="otf_vox2_aug");
-parser.add_argument('--fitlog_Desc',    type=str,   default="multi_gpu_epaca_tdnn");
-parser.add_argument('--train_name',     type=str,   default="multi_gpu_epaca_tdnn");
+parser.add_argument('--fitlog_Desc',    type=str,   default="multi_gpu_epaca_tdnn_test");
+parser.add_argument('--train_name',     type=str,   default="multi_gpu_epaca_tdnn_test");
 parser.add_argument('--mixedprec',      dest='mixedprec',   action='store_true', help='Enable mixed precision training')
 parser.add_argument('--GPU',            type=str,   default="6, 7");
 
@@ -226,7 +227,7 @@ def main_worker(gpu, ngpus_per_node, args):
             for vi, val in enumerate(sc):
                 outfile.write('%.4f %s\n'%(val,trials[vi]))
         fitlog.finish()   
-        quit()
+        return
     
     ## Initialise data loader
     trainLoader = get_data_loader(args.train_list, **vars(args))
@@ -275,9 +276,9 @@ def main_worker(gpu, ngpus_per_node, args):
                 if result[1] == min(min_eer):
                     training_utils.vox1_o_ASV_best_fitlog(result[1], result[-2], result[-1])
                     
-                    with open(result_save_path+"/model%09d.vox1osc"%it,'w') as outfile:
-                        for vi, val in enumerate(sc):
-                            outfile.write('%.4f %s\n'%(val,trials[vi]))
+                with open(result_save_path+"/model%09d.vox1osc"%it,'w') as outfile:
+                    for vi, val in enumerate(sc):
+                        outfile.write('%.4f %s\n'%(val,trials[vi]))
 
                 trainer.saveParameters(model_save_path+"/model%09d.model"%it)
                 
@@ -287,7 +288,7 @@ def main_worker(gpu, ngpus_per_node, args):
             if stop == True:
                 if args.gpu == 0:
                     fitlog.finish() 
-                quit()
+                return
 
         else:
             print("IT %d, GPU %d, LR %f, TEER/TAcc %2.2f, TLOSS %f"%(it, args.gpu, max(clr), traineer, loss))
@@ -296,7 +297,7 @@ def main_worker(gpu, ngpus_per_node, args):
         if it >= args.max_epoch:
             if args.gpu == 0:
                 fitlog.finish() 
-            quit()
+            return
 
         it+=1
 

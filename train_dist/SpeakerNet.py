@@ -134,6 +134,7 @@ class ModelTrainer(object):
 
             if self.total_step >= self.expected_step:
                 self.stop = True
+                print('')
                 return (loss/counter, top1/counter, self.stop)
 
         if self.lr_step == 'epoch': self.__scheduler__.step()

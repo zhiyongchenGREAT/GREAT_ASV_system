@@ -3,7 +3,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from utils import PreEmphasis
 import torchaudio
-from inv_specaug import SpecAugment
+import os
+from .inv_specaug import SpecAugment
 
 
 
@@ -141,7 +142,7 @@ class ECAPA_TDNN(nn.Module):
 
         self.spec_aug = spec_aug
         if self.spec_aug:
-            spec_aug = SpecAugment(frequency=0.2, frame=0.0, rows=1, cols=1, random_rows=False, random_cols=False)
+            self.spec_aug_f = SpecAugment(frequency=0.2, frame=0.0, rows=1, cols=1, random_rows=False, random_cols=False)
 
         print('%s, Embedding size is %d, Channels %d, Spec_aug %s.'%(os.path.basename(__file__), embd_dim, channels, str(self.spec_aug)))
 
@@ -152,9 +153,9 @@ class ECAPA_TDNN(nn.Module):
                 x = self.torchfb(x)+1e-6
                 x = x.log()
                 x = self.instancenorm(x)
-                if self.spec_aug:
+                if self.spec_aug and self.training:
                     for i in x:
-                        _ = spec_aug(i)
+                        _ = self.spec_aug_f(i)
 
 
         out1 = self.layer1(x)
@@ -169,6 +170,6 @@ class ECAPA_TDNN(nn.Module):
 
         return out
       
-def MainModel(n_mels, nOut=192, spec_aug=spec_aug, **kwargs):
+def MainModel(n_mels, nOut, spec_aug, **kwargs):
     model = ECAPA_TDNN(in_channels=n_mels, channels=1024, embd_dim=nOut, spec_aug=spec_aug)
     return model
