@@ -48,7 +48,7 @@ parser.add_argument('--lr_step',        type=str,   default="iteration", help='L
 parser.add_argument('--lr',             type=float, default=0.01,  help='Learning rate');
 parser.add_argument('--base_lr',        type=float, default=1e-5,  help='Learning rate min');
 parser.add_argument('--cycle_step',     type=int, default=None,  help='Learning rate cycle');
-parser.add_argument('--expected_step',  type=int, default=5200,  help='Total steps');
+parser.add_argument('--expected_step',  type=int, default=520,  help='Total steps');
 parser.add_argument("--lr_decay",       type=float, default=0.25,   help='Learning rate decay every [test_interval] epochs');
 parser.add_argument('--weight_decay',   type=float, default=5e-4,      help='Weight decay in the optimizer');
 
@@ -182,7 +182,7 @@ def main_worker(gpu, ngpus_per_node, args):
     modelfiles = glob.glob('%s/model0*.model'%model_save_path)
     modelfiles.sort()
 
-    if len(modelfiles) >= 1:
+    if len(modelfiles) >= 1 and not args.eval:
         trainer.loadParameters(modelfiles[-1], only_para=False);
         print("#Model %s loaded from previous state!"%modelfiles[-1]);
         # Note iteration is renewed to next, but total_step inherits from previous
@@ -226,7 +226,8 @@ def main_worker(gpu, ngpus_per_node, args):
         with open(result_save_path+"/eval_scores.txt",'w') as outfile:
             for vi, val in enumerate(sc):
                 outfile.write('%.4f %s\n'%(val,trials[vi]))
-        fitlog.finish()   
+        fitlog.finish()
+        tbxwriter.close()
         return
     
     ## Initialise data loader
@@ -287,7 +288,8 @@ def main_worker(gpu, ngpus_per_node, args):
 
             if stop == True:
                 if args.gpu == 0:
-                    fitlog.finish() 
+                    fitlog.finish()
+                    tbxwriter.close()
                 return
 
         else:
@@ -296,7 +298,8 @@ def main_worker(gpu, ngpus_per_node, args):
             scorefile.flush()
         if it >= args.max_epoch:
             if args.gpu == 0:
-                fitlog.finish() 
+                fitlog.finish()
+                tbxwriter.close()
             return
 
         it+=1
@@ -337,12 +340,14 @@ def main():
 
     # ## fitlog
     # training_utils.standard_fitlog_init(**vars(args))
-    print('######SPAWN#####')
 
     if args.distributed:
+        print('######SPAWN#####')
         mp.spawn(main_worker, nprocs=n_gpus, args=(n_gpus, args))
     else:
+        print('######ALONE#####')
         main_worker(0, 1, args)
+    print('######DONE#####')
 
 
 if __name__ == '__main__':

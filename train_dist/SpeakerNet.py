@@ -184,8 +184,8 @@ class ModelTrainer(object):
         for idx, file in enumerate(setfiles):
 
             inp1 = torch.FloatTensor(loadWAV(os.path.join(test_path,file), eval_frames, evalmode=True, num_eval=num_eval)).cuda()
-
-            ref_feat = self.__model__.forward(inp1).detach().cpu()
+            with autocast():
+                ref_feat = self.__model__.forward(inp1).detach().cpu()
 
             filename = '%06d.wav'%idx
 
