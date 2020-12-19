@@ -21,19 +21,13 @@ def worker_init_fn(worker_id):
     numpy.random.seed(numpy.random.get_state()[1][0] + worker_id)
 
 
-def loadWAV(filename, max_frames, evalmode=True, num_eval=10, resample=None):
+def loadWAV(filename, max_frames, evalmode=True, num_eval=10):
 
     # Maximum audio length
     max_audio = max_frames * 160 + 240
 
     # Read wav file and convert to torch tensor
     sample_rate, audio  = wavfile.read(filename)
-    if resample == 'fast':
-        audio = signal.resample_poly(audio, 9, 10)
-    elif resample == 'slow':
-        audio = signal.resample_poly(audio, 11, 10)
-    else:
-        pass
 
     audiosize = audio.shape[0]
 
@@ -110,17 +104,15 @@ class AugmentWAV(object):
 
 
 class voxceleb_loader(Dataset):
-    def __init__(self, dataset_file_name, augment, musan_path, rir_path, max_frames, train_path, sox_aug=False):
+    def __init__(self, dataset_file_name, augment, musan_path, rir_path, max_frames, train_path):
 
         self.augment_wav = AugmentWAV(musan_path=musan_path, rir_path=rir_path, max_frames = max_frames)
 
-        self.dataset_file_name = dataset_file_name
-        self.max_frames = max_frames
+        self.dataset_file_name = dataset_file_name;
+        self.max_frames = max_frames;
         self.musan_path = musan_path
         self.rir_path   = rir_path
         self.augment    = augment
-
-        self.sox_aug    = sox_aug
         
         ### Read Training Files...
         with open(dataset_file_name) as dataset_file:
@@ -129,74 +121,32 @@ class voxceleb_loader(Dataset):
         dictkeys = list(set([x.split()[0] for x in lines]))
         dictkeys.sort()
         dictkeys = { key : ii for ii, key in enumerate(dictkeys) }
-        len_dictkeys_ori = len(dictkeys)
-        if self.sox_aug:
-            len_dictkeys = len(dictkeys)
-            for ii, key in enumerate(list(dictkeys.keys())):
-                dictkeys[key+'_slow'] = ii + len_dictkeys
-                dictkeys[key+'_fast'] = ii + len_dictkeys*2
-
-            assert len(dictkeys) == 3*len_dictkeys_ori
 
         self.label_dict = {}
         self.data_list  = []
         self.data_label = []
         
-        lidx = 0
-        for _, line in enumerate(lines):
+        for lidx, line in enumerate(lines):
             data = line.strip().split();
 
-            speaker_label = dictkeys[data[0]]
-            filename = os.path.join(train_path,data[1])
+            speaker_label = dictkeys[data[0]];
+            filename = os.path.join(train_path,data[1]);
 
             if not (speaker_label in self.label_dict):
-                self.label_dict[speaker_label] = []
+                self.label_dict[speaker_label] = [];
 
-            self.label_dict[speaker_label].append(lidx)
+            self.label_dict[speaker_label].append(lidx);
             
             self.data_label.append(speaker_label)
             self.data_list.append(filename)
-
-            lidx += 1  
-
-            if self.sox_aug:
-                speaker_label_aslow = dictkeys[data[0]+'_slow']
-                if not (speaker_label_aslow in self.label_dict):
-                    self.label_dict[speaker_label_aslow] = []
-
-                self.label_dict[speaker_label_aslow].append(lidx)
-                
-                self.data_label.append(speaker_label_aslow)
-                self.data_list.append(filename+'.slow')
-                lidx += 1
-
-                speaker_label_afast = dictkeys[data[0]+'_fast']
-                if not (speaker_label_afast in self.label_dict):
-                    self.label_dict[speaker_label_afast] = []
-
-                self.label_dict[speaker_label_afast].append(lidx)
-                
-                self.data_label.append(speaker_label_afast)
-                self.data_list.append(filename+'.fast')
-                lidx += 1
-                      
 
     def __getitem__(self, indices):
 
         feat = []
 
         for index in indices:
-            if not self.sox_aug:
-                audio = loadWAV(self.data_list[index], self.max_frames, evalmode=False)
-            else:
-                if self.data_list[index][-4:] == 'fast':
-                    wav_path = self.data_list[index][:-5]
-                    audio = loadWAV(wav_path, self.max_frames, evalmode=False, resample='fast')
-                elif self.data_list[index][-4:] == 'slow':
-                    wav_path = self.data_list[index][:-5]
-                    audio = loadWAV(wav_path, self.max_frames, evalmode=False, resample='slow')
-                else:
-                    audio = loadWAV(self.data_list[index], self.max_frames, evalmode=False, resample=None)
+            
+            audio = loadWAV(self.data_list[index], self.max_frames, evalmode=False)
             
             if self.augment:
                 augtype = random.randint(0,4)
@@ -243,14 +193,14 @@ class voxceleb_sampler(torch.utils.data.Sampler):
 
         self.label_dict         = data_source.label_dict
         self.nPerSpeaker        = nPerSpeaker
-        self.max_seg_per_spk    = max_seg_per_spk
-        self.batch_size         = batch_size
+        self.max_seg_per_spk    = max_seg_per_spk;
+        self.batch_size         = batch_size;
         self.class_strict_balance = class_strict_balance
         self.const_batch = const_batch
         
     def __iter__(self):
         
-        dictkeys = list(self.label_dict.keys())
+        dictkeys = list(self.label_dict.keys());
         dictkeys.sort()
 
         lol = lambda lst, sz: [lst[i:i+sz] for i in range(0, len(lst), sz)]
@@ -322,9 +272,9 @@ class voxceleb_sampler(torch.utils.data.Sampler):
         return len(self.mixmap)
 
 
-def get_data_loader(dataset_file_name, batch_size, augment, musan_path, rir_path, max_frames, max_seg_per_spk, nDataLoaderThread, nPerSpeaker, train_path, sox_aug, **kwargs):
+def get_data_loader(dataset_file_name, batch_size, augment, musan_path, rir_path, max_frames, max_seg_per_spk, nDataLoaderThread, nPerSpeaker, train_path, **kwargs):
     
-    train_dataset = voxceleb_loader(dataset_file_name, augment, musan_path, rir_path, max_frames, train_path, sox_aug)
+    train_dataset = voxceleb_loader(dataset_file_name, augment, musan_path, rir_path, max_frames, train_path)
 
     train_sampler = voxceleb_sampler(train_dataset, nPerSpeaker, max_seg_per_spk, batch_size)
 

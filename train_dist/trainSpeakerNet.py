@@ -48,7 +48,7 @@ parser.add_argument('--lr_step',        type=str,   default="iteration", help='L
 parser.add_argument('--lr',             type=float, default=0.01,  help='Learning rate');
 parser.add_argument('--base_lr',        type=float, default=1e-5,  help='Learning rate min');
 parser.add_argument('--cycle_step',     type=int, default=None,  help='Learning rate cycle');
-parser.add_argument('--expected_step',  type=int, default=520,  help='Total steps');
+parser.add_argument('--expected_step',  type=int, default=520000,  help='Total steps');
 parser.add_argument("--lr_decay",       type=float, default=0.25,   help='Learning rate decay every [test_interval] epochs');
 parser.add_argument('--weight_decay',   type=float, default=5e-4,      help='Weight decay in the optimizer');
 
@@ -80,14 +80,15 @@ parser.add_argument('--model',          type=str,   default="",     help='Name o
 parser.add_argument('--encoder_type',   type=str,   default="",  help='Type of encoder');
 parser.add_argument('--nOut',           type=int,   default=192,    help='Embedding size in the last FC layer');
 parser.add_argument('--spec_aug',       type=bool,  default=True,    help='Use spec aug or not');
+parser.add_argument('--sox_aug',       type=bool,  default=True,    help='Use sox aug or not');
 
 ## Training Control
 parser.add_argument('--trainlogs',      type=str,   default="/workspace/LOGS_OUTPUT/tmp_logs/train_logs_201120");
 parser.add_argument('--fitlogdir',      type=str,   default="/workspace/LOGS_OUTPUT/tmp_logs/ASV_LOGS_201120");
 parser.add_argument('--tbxdir',         type=str,   default="/workspace/LOGS_OUTPUT/tmp_logs/tbx")
 parser.add_argument('--fitlog_DATASET', type=str,   default="otf_vox2_aug");
-parser.add_argument('--fitlog_Desc',    type=str,   default="multi_gpu_epaca_tdnn_test");
-parser.add_argument('--train_name',     type=str,   default="multi_gpu_epaca_tdnn_test");
+parser.add_argument('--fitlog_Desc',    type=str,   default="multi_gpu_epaca_tdnn_soxaug");
+parser.add_argument('--train_name',     type=str,   default="multi_gpu_epaca_tdnn_soxaug");
 parser.add_argument('--mixedprec',      dest='mixedprec',   action='store_true', help='Enable mixed precision training')
 parser.add_argument('--GPU',            type=str,   default="6, 7");
 
