@@ -90,7 +90,7 @@ parser.add_argument('--Syncbatch',       type=bool,  default=False,    help='Use
 
 ## DA
 parser.add_argument('--domain_classes',  type=int,   default=2,    help='domain classes')
-parser.add_argument('--ori_weight_dict',  type=json.loads,   default='{"0":"12", "1":"1"}')
+parser.add_argument('--ori_weight_dict',  type=json.loads,   default='{"0":"14", "1":"1"}')
 
 
 ## Training Control
@@ -98,10 +98,10 @@ parser.add_argument('--trainlogs',      type=str,   default="/workspace/LOGS_OUT
 parser.add_argument('--fitlogdir',      type=str,   default="/workspace/LOGS_OUTPUT/tmp_logs/ASV_LOGS_201120");
 parser.add_argument('--tbxdir',         type=str,   default="/workspace/LOGS_OUTPUT/tmp_logs/tbx")
 parser.add_argument('--fitlog_DATASET', type=str,   default="otf_vox2_aug");
-parser.add_argument('--fitlog_Desc',    type=str,   default="Xvecor_alda_0.0");
-parser.add_argument('--train_name',     type=str,   default="Xvecor_alda_0.0");
+parser.add_argument('--fitlog_Desc',    type=str,   default="test2");
+parser.add_argument('--train_name',     type=str,   default="test2");
 parser.add_argument('--mixedprec',      dest='mixedprec',   action='store_true', help='Enable mixed precision training')
-parser.add_argument('--GPU',            type=str,   default="4");
+parser.add_argument('--GPU',            type=str,   default="7");
 
 ## For test only
 parser.add_argument('--distance_m',     type=str, default="cosine", help='Eval distance metric')

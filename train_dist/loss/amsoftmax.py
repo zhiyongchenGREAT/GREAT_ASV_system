@@ -41,5 +41,6 @@ class LossFunction(nn.Module):
         costh_m_s = self.s * costh_m
         loss    = self.ce(costh_m_s, label)
         prec1   = accuracy(costh_m_s.detach(), label.detach(), topk=(1,))[0]
+        
         return loss, prec1
 

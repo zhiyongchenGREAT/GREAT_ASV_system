@@ -94,7 +94,7 @@ class ModelTrainer_ALDA(object):
         self.stop = False
         self.tbxwriter = tbxwriter
 
-        self.beta = 0.0
+        self.beta = 0.01
         self.gamma = 0.1
         self.warm_step = 10000
 
@@ -393,7 +393,7 @@ class ModelTrainer_ALDA(object):
 
             inp1 = torch.FloatTensor(loadWAV(os.path.join(test_path,file), eval_frames, evalmode=True, num_eval=num_eval)).cuda()
 
-            ref_feat = self.__S__.forward(inp1).detach().cpu()
+            ref_feat = self.__model__.forward(inp1).detach().cpu()
 
             trial_feats[file]     = ref_feat
 
@@ -408,16 +408,16 @@ class ModelTrainer_ALDA(object):
         all_trials = []
         tstart = time.time()
 
-        ## Compute mean
-        mean_vector = torch.zeros([192])
-        for count1, i in enumerate(trial_feats):
-            mean_vector = mean_vector + torch.mean(trial_feats[i], axis=0)
-        for count2, i in enumerate(enroll_feats):
-            mean_vector = mean_vector + torch.mean(enroll_feats[i], axis=0)
-        mean_vector = mean_vector / (count1+1+count2+1)
+        # ## Compute mean
+        # mean_vector = torch.zeros([192])
+        # for count1, i in enumerate(trial_feats):
+        #     mean_vector = mean_vector + torch.mean(trial_feats[i], axis=0)
+        # for count2, i in enumerate(enroll_feats):
+        #     mean_vector = mean_vector + torch.mean(enroll_feats[i], axis=0)
+        # mean_vector = mean_vector / (count1+1+count2+1)
 
-        if verbose:
-            print('\nmean vec: ', mean_vector.shape)
+        # if verbose:
+        #     print('\nmean vec: ', mean_vector.shape)
 
         ## Read files and compute all scores
         for idx, line in enumerate(trial_lines):

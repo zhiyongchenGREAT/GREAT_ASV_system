@@ -225,9 +225,6 @@ class da_loader(Dataset):
     def __len__(self):
         return len(self.data_list)
 
-class da_domain_balance_sampler(torch.utils.data.Sampler):
-    pass
-
 class da_sampler(torch.utils.data.Sampler):
     ## class_strict_balance super-sampling data to max_seg_per_spk for every spks
     ## const_batch return a iterator with constant batch numbers everytime(maximum batch available for the dataset) 
@@ -315,11 +312,11 @@ class da_sampler(torch.utils.data.Sampler):
         return len(self.mixmap)
 
 
-def get_data_loader_alda(dataset_file_name, batch_size, augment, musan_path, rir_path, max_frames, max_seg_per_spk, nDataLoaderThread, nPerSpeaker, train_path, sox_aug, **kwargs):
+def get_data_loader_alda(dataset_file_name, batch_size, augment, musan_path, rir_path, max_frames, max_seg_per_spk, nDataLoaderThread, nPerSpeaker, train_path, sox_aug, class_strict_balance=False, **kwargs):
     
     train_dataset = da_loader(dataset_file_name, augment, musan_path, rir_path, max_frames, train_path, sox_aug)
 
-    train_sampler = da_sampler(train_dataset, nPerSpeaker, max_seg_per_spk, batch_size)
+    train_sampler = da_sampler(train_dataset, nPerSpeaker, max_seg_per_spk, batch_size, class_strict_balance)
 
     train_loader = torch.utils.data.DataLoader(
         train_dataset,

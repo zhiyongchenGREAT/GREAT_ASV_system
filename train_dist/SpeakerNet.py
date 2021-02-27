@@ -117,7 +117,7 @@ class ModelTrainer(object):
                 self.__optimizer__.step();
 
             loss    += nloss.detach().cpu()
-            top1    += prec1.detach().cpu()
+            top1    += prec1.detach().cpu()          
             counter += 1
             index   += stepsize
 
@@ -409,7 +409,7 @@ class ModelTrainer(object):
             'model': self.__model__.module.state_dict(),
             'optimizer': self.__optimizer__.state_dict(),
             'scheduler': self.__scheduler__.state_dict(),
-            'scaler': self.scaler.state_dict()
+            'scaler': self.scaler.state_dict(),
             'total_step': self.total_step
             }       
         torch.save(state, path)
@@ -443,18 +443,18 @@ class ModelTrainer(object):
         self_state = self.__model__.module.state_dict()
         loaded_state = torch.load(path, map_location="cuda:%d"%self.gpu)
         # loaded_state = torch.load(path, map_location="cpu")
-
         for name, param in loaded_state['model'].items():
             origname = name
             if name not in self_state:
                 name = name.replace("module.", "")
-
                 if name not in self_state:
-                    print("#%s is not in the model."%origname)
-                    continue
+                    name = "__S__."+name
+                    if name not in self_state:
+                        print("#%s is not in the model."%origname)
+                        continue
 
             if self_state[name].size() != loaded_state['model'][origname].size():
-                print("#Wrong parameter length: %s, model: %s, loaded: %s"%(origname, self_state[name].size(), loaded_state[origname].size()))
+                print("#Wrong parameter length: %s, model: %s, loaded: %s"%(origname, self_state[name].size(), loaded_state['model'][origname].size()))
                 continue
 
             self_state[name].copy_(param)

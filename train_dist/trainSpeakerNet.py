@@ -24,74 +24,74 @@ import torch.multiprocessing as mp
 ## Parse arguments
 ## ===== ===== ===== ===== ===== ===== ===== =====
 
-parser = argparse.ArgumentParser(description = "SpeakerNet");
+parser = argparse.ArgumentParser(description = "SpeakerNet")
 
-parser.add_argument('--config',         type=str,   default=None,   help='Config YAML file');
+parser.add_argument('--config',         type=str,   default=None,   help='Config YAML file')
 
 ## Data loader
-parser.add_argument('--max_frames',     type=int,   default=300,    help='Input length to the network for training');
-parser.add_argument('--eval_frames',    type=int,   default=0,    help='Input length to the network for testing; 0 uses the whole files');
-parser.add_argument('--batch_size',     type=int,   default=128,    help='Batch size, number of speakers per batch');
-parser.add_argument('--max_seg_per_spk', type=int,  default=100,    help='Maximum number of utterances per speaker per epoch');
-parser.add_argument('--nDataLoaderThread', type=int, default=5,     help='Number of loader threads');
+parser.add_argument('--max_frames',     type=int,   default=300,    help='Input length to the network for training')
+parser.add_argument('--eval_frames',    type=int,   default=0,    help='Input length to the network for testing; 0 uses the whole files')
+parser.add_argument('--batch_size',     type=int,   default=128,    help='Batch size, number of speakers per batch')
+parser.add_argument('--max_seg_per_spk', type=int,  default=100,    help='Maximum number of utterances per speaker per epoch')
+parser.add_argument('--nDataLoaderThread', type=int, default=5,     help='Number of loader threads')
 parser.add_argument('--augment',        type=bool,  default=True,  help='Augment input')
 
 ## Training details
-parser.add_argument('--test_interval',  type=int,   default=10,     help='Test and save every [test_interval] epochs');
-parser.add_argument('--max_epoch',      type=int,   default=200,    help='Maximum number of epochs');
-parser.add_argument('--trainfunc',      type=str,   default="",     help='Loss function');
+parser.add_argument('--test_interval',  type=int,   default=10,     help='Test and save every [test_interval] epochs')
+parser.add_argument('--max_epoch',      type=int,   default=200,    help='Maximum number of epochs')
+parser.add_argument('--trainfunc',      type=str,   default="",     help='Loss function')
 
 ## Optimizer
-parser.add_argument('--optimizer',      type=str,   default="sgd", help='sgd or adam');
-parser.add_argument('--scheduler',      type=str,   default="cosine", help='Learning rate scheduler');
-parser.add_argument('--lr_step',        type=str,   default="iteration", help='Learning rate scheduler');
-parser.add_argument('--lr',             type=float, default=0.01,  help='Learning rate');
-parser.add_argument('--base_lr',        type=float, default=1e-5,  help='Learning rate min');
-parser.add_argument('--cycle_step',     type=int, default=None,  help='Learning rate cycle');
-parser.add_argument('--expected_step',  type=int, default=520000*3,  help='Total steps');
-parser.add_argument("--lr_decay",       type=float, default=0.25,   help='Learning rate decay every [test_interval] epochs');
-parser.add_argument('--weight_decay',   type=float, default=5e-4,      help='Weight decay in the optimizer');
+parser.add_argument('--optimizer',      type=str,   default="sgd", help='sgd or adam')
+parser.add_argument('--scheduler',      type=str,   default="cosine", help='Learning rate scheduler')
+parser.add_argument('--lr_step',        type=str,   default="iteration", help='Learning rate scheduler')
+parser.add_argument('--lr',             type=float, default=0.01,  help='Learning rate')
+parser.add_argument('--base_lr',        type=float, default=1e-5,  help='Learning rate min')
+parser.add_argument('--cycle_step',     type=int, default=None,  help='Learning rate cycle')
+parser.add_argument('--expected_step',  type=int, default=520000,  help='Total steps')
+parser.add_argument("--lr_decay",       type=float, default=0.25,   help='Learning rate decay every [test_interval] epochs')
+parser.add_argument('--weight_decay',   type=float, default=5e-4,      help='Weight decay in the optimizer')
 
 ## Loss functions
-parser.add_argument("--hard_prob",      type=float, default=None,    help='Hard negative mining probability, otherwise random, only for some loss functions');
-parser.add_argument("--hard_rank",      type=int,   default=None,     help='Hard negative mining rank in the batch, only for some loss functions');
-parser.add_argument('--margin',         type=float, default=0.2,      help='Loss margin, only for some loss functions');
-parser.add_argument('--scale',          type=float, default=30,     help='Loss scale, only for some loss functions');
-parser.add_argument('--nPerSpeaker',    type=int,   default=1,      help='Number of utterances per speaker per batch, only for metric learning based losses');
-parser.add_argument('--nClasses',       type=int,   default=5994,   help='Number of speakers in the softmax layer, only for softmax-based losses');
+parser.add_argument("--hard_prob",      type=float, default=None,    help='Hard negative mining probability, otherwise random, only for some loss functions')
+parser.add_argument("--hard_rank",      type=int,   default=None,     help='Hard negative mining rank in the batch, only for some loss functions')
+parser.add_argument('--margin',         type=float, default=0.2,      help='Loss margin, only for some loss functions')
+parser.add_argument('--scale',          type=float, default=30,     help='Loss scale, only for some loss functions')
+parser.add_argument('--nPerSpeaker',    type=int,   default=1,      help='Number of utterances per speaker per batch, only for metric learning based losses')
+parser.add_argument('--nClasses',       type=int,   default=5994,   help='Number of speakers in the softmax layer, only for softmax-based losses')
 
 ## Load and save
-parser.add_argument('--initial_model',  type=str,   default="",     help='Initial model weights');
-# parser.add_argument('--save_path',      type=str,   default="", help='Path for model and logs');
+parser.add_argument('--initial_model',  type=str,   default="",     help='Initial model weights')
+# parser.add_argument('--save_path',      type=str,   default="", help='Path for model and logs')
 
 ## Training and test data
-parser.add_argument('--train_list',     type=str,   default="/workspace/DATASET/server9_ssd/voxceleb/vox2_trainlist.txt",     help='Train list');
-parser.add_argument('--test_list',      type=str,   default="/workspace/DATASET/server9_ssd/voxceleb/vox_o_triallist.txt",     help='Evaluation list');
-parser.add_argument('--enroll_list',    type=str,   default="",     help='Enroll list');
-parser.add_argument('--train_path',     type=str,   default="/workspace/DATASET/server9_ssd/voxceleb", help='Absolute path to the train set');
-parser.add_argument('--test_path',      type=str,   default="/workspace/DATASET/server9_ssd/voxceleb", help='Absolute path to the test set');
-parser.add_argument('--musan_path',     type=str,   default="/workspace/DATASET/server9_ssd/musan_split", help='Absolute path to the test set');
-parser.add_argument('--rir_path',       type=str,   default="/workspace/DATASET/server9_ssd/RIRS_NOISES/simulated_rirs", help='Absolute path to the test set');
+parser.add_argument('--train_list',     type=str,   default="/workspace/DATASET/server9_ssd/voxceleb/vox2_trainlist.txt",     help='Train list')
+parser.add_argument('--test_list',      type=str,   default="/workspace/DATASET/server9_ssd/voxceleb/vox_o_triallist.txt",     help='Evaluation list')
+parser.add_argument('--enroll_list',    type=str,   default="",     help='Enroll list')
+parser.add_argument('--train_path',     type=str,   default="/workspace/DATASET/server9_ssd/voxceleb", help='Absolute path to the train set')
+parser.add_argument('--test_path',      type=str,   default="/workspace/DATASET/server9_ssd/voxceleb", help='Absolute path to the test set')
+parser.add_argument('--musan_path',     type=str,   default="/workspace/DATASET/server9_ssd/musan_split", help='Absolute path to the test set')
+parser.add_argument('--rir_path',       type=str,   default="/workspace/DATASET/server9_ssd/RIRS_NOISES/simulated_rirs", help='Absolute path to the test set')
 
 ## Model definition
-parser.add_argument('--n_mels',         type=int,   default=40,     help='Number of mel filterbanks');
+parser.add_argument('--n_mels',         type=int,   default=40,     help='Number of mel filterbanks')
 parser.add_argument('--log_input',      type=bool,  default=True,  help='Log input features')
-parser.add_argument('--model',          type=str,   default="",     help='Name of model definition');
-parser.add_argument('--encoder_type',   type=str,   default="",  help='Type of encoder');
-parser.add_argument('--nOut',           type=int,   default=192,    help='Embedding size in the last FC layer');
-parser.add_argument('--spec_aug',       type=bool,  default=True,    help='Use spec aug or not');
-parser.add_argument('--sox_aug',       type=bool,  default=True,    help='Use sox aug or not');
-parser.add_argument('--Syncbatch',       type=bool,  default=True,    help='Use sox aug or not');
+parser.add_argument('--model',          type=str,   default="",     help='Name of model definition')
+parser.add_argument('--encoder_type',   type=str,   default="",  help='Type of encoder')
+parser.add_argument('--nOut',           type=int,   default=192,    help='Embedding size in the last FC layer')
+parser.add_argument('--spec_aug',       type=bool,  default=True,    help='Use spec aug or not')
+parser.add_argument('--sox_aug',       type=bool,  default=False,    help='Use sox aug or not')
+parser.add_argument('--Syncbatch',       type=bool,  default=False,    help='Use sox aug or not')
 
 ## Training Control
-parser.add_argument('--trainlogs',      type=str,   default="/workspace/LOGS_OUTPUT/tmp_logs/train_logs_201120");
-parser.add_argument('--fitlogdir',      type=str,   default="/workspace/LOGS_OUTPUT/tmp_logs/ASV_LOGS_201120");
-parser.add_argument('--tbxdir',         type=str,   default="/workspace/LOGS_OUTPUT/tmp_logs/tbx")
-parser.add_argument('--fitlog_DATASET', type=str,   default="otf_vox2_aug");
-parser.add_argument('--fitlog_Desc',    type=str,   default="multi_gpu_epaca_tdnn_soxaug_voxsrc20");
-parser.add_argument('--train_name',     type=str,   default="multi_gpu_epaca_tdnn_soxaug_voxsrc20");
+parser.add_argument('--trainlogs',      type=str,   default="/workspace/LOGS_OUTPUT/server9_nvme1/ASV_LOGS_202102/train_logs_201120")
+parser.add_argument('--fitlogdir',      type=str,   default="/workspace/LOGS_OUTPUT/server9_nvme1/ASV_LOGS_202102/ASV_LOGS_201120")
+parser.add_argument('--tbxdir',         type=str,   default="/workspace/LOGS_OUTPUT/server9_nvme1/ASV_LOGS_202102/tbx")
+parser.add_argument('--fitlog_DATASET', type=str,   default="otf_vox2_aug")
+parser.add_argument('--fitlog_Desc',    type=str,   default="PANNS_res38_pre")
+parser.add_argument('--train_name',     type=str,   default="PANNS_res38_pre")
 parser.add_argument('--mixedprec',      dest='mixedprec',   action='store_true', help='Enable mixed precision training')
-parser.add_argument('--GPU',            type=str,   default="7");
+parser.add_argument('--GPU',            type=str,   default="4")
 
 ## For test only
 parser.add_argument('--distance_m',     type=str, default="cosine", help='Eval distance metric')

@@ -511,7 +511,7 @@ class ModelTrainer_ALDA(object):
                     continue
 
             if self_state[name].size() != loaded_state['model'][origname].size():
-                print("#Wrong parameter length: %s, model: %s, loaded: %s"%(origname, self_state[name].size(), loaded_state[origname].size()))
+                print("#Wrong parameter length: %s, model: %s, loaded: %s"%(origname, self_state[name].size(), loaded_state['model'][origname].size()))
                 continue
 
             self_state[name].copy_(param)
