@@ -28,6 +28,12 @@ def loadWAV(filename, max_frames, evalmode=True, num_eval=10, resample=None):
 
     # Read wav file and convert to torch tensor
     sample_rate, audio  = wavfile.read(filename)
+
+    # Resample data if not 16k
+    if (sample_rate != 16000):
+        number_of_samples = round(len(audio) * float(16000) / sample_rate)
+        audio = signal.resample(audio, number_of_samples)
+    
     if resample == 'fast':
         audio = signal.resample_poly(audio, 9, 10)
     elif resample == 'slow':

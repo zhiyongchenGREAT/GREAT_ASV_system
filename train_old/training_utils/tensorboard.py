@@ -2,10 +2,12 @@ import os
 import shutil
 import tensorboardX
 
-def tensorboard_init(opt):
-    if opt.tbx_path == '':
+__all__ = ['tensorboard_init']
+
+def tensorboard_init(tbxdir, train_name, **kwargs):
+    if tbxdir == '':
         return None
-    writer_path = os.path.join(opt.tbx_path, opt.train_name)
+    writer_path = os.path.join(tbxdir, train_name)
     if os.path.isdir(writer_path):
         # shutil.rmtree(writer_path)
         pass

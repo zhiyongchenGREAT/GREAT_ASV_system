@@ -28,6 +28,13 @@ def loadWAV(filename, max_frames, evalmode=True, num_eval=10, resample=None):
 
     # Read wav file and convert to torch tensor
     sample_rate, audio  = wavfile.read(filename)
+    # print(sample_rate)
+
+    # Resample data if not 16k
+    if (sample_rate != 16000):
+        number_of_samples = round(len(audio) * float(16000) / sample_rate)
+        audio = signal.resample(audio, number_of_samples)
+
     if resample == 'fast':
         audio = signal.resample_poly(audio, 9, 10)
     elif resample == 'slow':
@@ -304,16 +311,28 @@ class voxceleb_sampler(torch.utils.data.Sampler):
         ## const batch
         if self.const_batch:
             data_length = len(flattened_label)
+            # print(data_length)
             expect_return_length = data_length - data_length % self.batch_size
+            # print(expect_return_length)
+            # print(len(self.mixmap))
             if len(self.mixmap) >= expect_return_length:
                 self.mixmap = self.mixmap[:expect_return_length]
             else:
-                while(len(self.mixmap) < expect_return_length):
-                    ii = numpy.random.randint(0, data_length)
-                    startbatch = len(mixlabel) - len(mixlabel) % self.batch_size
-                    if flattened_label[ii] not in mixlabel[startbatch:]:
+                if len(self.mixmap) > self.batch_size:                
+                    while(len(self.mixmap) < expect_return_length):
+                        ii = numpy.random.randint(0, data_length)                       
+                        startbatch = len(mixlabel) - len(mixlabel) % self.batch_size
+                        if flattened_label[ii] not in mixlabel[startbatch:]:
+                            mixlabel.append(flattened_label[ii])
+                            self.mixmap.append(ii)
+                else:
+                    while(len(self.mixmap) < expect_return_length):
+                        ii = numpy.random.randint(0, data_length)                       
+                        startbatch = len(mixlabel) - len(mixlabel) % self.batch_size
                         mixlabel.append(flattened_label[ii])
-                        self.mixmap.append(ii)
+                        self.mixmap.append(ii)                    
+
+
                 assert len(self.mixmap) == expect_return_length
         
         return iter([flattened_list[i] for i in self.mixmap])

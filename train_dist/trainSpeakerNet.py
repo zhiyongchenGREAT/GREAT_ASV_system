@@ -38,7 +38,7 @@ parser.add_argument('--augment',        type=bool,  default=True,  help='Augment
 
 ## Training details
 parser.add_argument('--test_interval',  type=int,   default=10,     help='Test and save every [test_interval] epochs')
-parser.add_argument('--max_epoch',      type=int,   default=200,    help='Maximum number of epochs')
+parser.add_argument('--max_epoch',      type=int,   default=99999,    help='Maximum number of epochs')
 parser.add_argument('--trainfunc',      type=str,   default="",     help='Loss function')
 
 ## Optimizer
@@ -48,7 +48,7 @@ parser.add_argument('--lr_step',        type=str,   default="iteration", help='L
 parser.add_argument('--lr',             type=float, default=0.01,  help='Learning rate')
 parser.add_argument('--base_lr',        type=float, default=1e-5,  help='Learning rate min')
 parser.add_argument('--cycle_step',     type=int, default=None,  help='Learning rate cycle')
-parser.add_argument('--expected_step',  type=int, default=520000,  help='Total steps')
+parser.add_argument('--expected_step',  type=int, default=520000*3,  help='Total steps')
 parser.add_argument("--lr_decay",       type=float, default=0.25,   help='Learning rate decay every [test_interval] epochs')
 parser.add_argument('--weight_decay',   type=float, default=5e-4,      help='Weight decay in the optimizer')
 
@@ -58,18 +58,18 @@ parser.add_argument("--hard_rank",      type=int,   default=None,     help='Hard
 parser.add_argument('--margin',         type=float, default=0.2,      help='Loss margin, only for some loss functions')
 parser.add_argument('--scale',          type=float, default=30,     help='Loss scale, only for some loss functions')
 parser.add_argument('--nPerSpeaker',    type=int,   default=1,      help='Number of utterances per speaker per batch, only for metric learning based losses')
-parser.add_argument('--nClasses',       type=int,   default=5994,   help='Number of speakers in the softmax layer, only for softmax-based losses')
+parser.add_argument('--nClasses',       type=int,   default=5994*3,   help='Number of speakers in the softmax layer, only for softmax-based losses')
 
 ## Load and save
 parser.add_argument('--initial_model',  type=str,   default="",     help='Initial model weights')
 # parser.add_argument('--save_path',      type=str,   default="", help='Path for model and logs')
 
 ## Training and test data
-parser.add_argument('--train_list',     type=str,   default="/workspace/DATASET/server9_ssd/voxceleb/vox2_trainlist.txt",     help='Train list')
-parser.add_argument('--test_list',      type=str,   default="/workspace/DATASET/server9_ssd/voxceleb/vox_o_triallist.txt",     help='Evaluation list')
+parser.add_argument('--train_list',     type=str,   default="/workspace/DATASET/server9_ssd/sdsv21/vox2_trainlist.txt",     help='Train list')
+parser.add_argument('--test_list',      type=str,   default="/workspace/DATASET/server9_ssd/sdsv21/vox_o_triallist.txt",     help='Evaluation list')
 parser.add_argument('--enroll_list',    type=str,   default="",     help='Enroll list')
-parser.add_argument('--train_path',     type=str,   default="/workspace/DATASET/server9_ssd/voxceleb", help='Absolute path to the train set')
-parser.add_argument('--test_path',      type=str,   default="/workspace/DATASET/server9_ssd/voxceleb", help='Absolute path to the test set')
+parser.add_argument('--train_path',     type=str,   default="/workspace/DATASET/server9_ssd/sdsv21", help='Absolute path to the train set')
+parser.add_argument('--test_path',      type=str,   default="/workspace/DATASET/server9_ssd/sdsv21", help='Absolute path to the test set')
 parser.add_argument('--musan_path',     type=str,   default="/workspace/DATASET/server9_ssd/musan_split", help='Absolute path to the test set')
 parser.add_argument('--rir_path',       type=str,   default="/workspace/DATASET/server9_ssd/RIRS_NOISES/simulated_rirs", help='Absolute path to the test set')
 
@@ -80,18 +80,18 @@ parser.add_argument('--model',          type=str,   default="",     help='Name o
 parser.add_argument('--encoder_type',   type=str,   default="",  help='Type of encoder')
 parser.add_argument('--nOut',           type=int,   default=192,    help='Embedding size in the last FC layer')
 parser.add_argument('--spec_aug',       type=bool,  default=True,    help='Use spec aug or not')
-parser.add_argument('--sox_aug',       type=bool,  default=False,    help='Use sox aug or not')
+parser.add_argument('--sox_aug',       type=bool,  default=True,    help='Use sox aug or not')
 parser.add_argument('--Syncbatch',       type=bool,  default=False,    help='Use sox aug or not')
 
 ## Training Control
 parser.add_argument('--trainlogs',      type=str,   default="/workspace/LOGS_OUTPUT/server9_nvme1/ASV_LOGS_202102/train_logs_201120")
 parser.add_argument('--fitlogdir',      type=str,   default="/workspace/LOGS_OUTPUT/server9_nvme1/ASV_LOGS_202102/ASV_LOGS_201120")
 parser.add_argument('--tbxdir',         type=str,   default="/workspace/LOGS_OUTPUT/server9_nvme1/ASV_LOGS_202102/tbx")
-parser.add_argument('--fitlog_DATASET', type=str,   default="otf_vox2_aug")
-parser.add_argument('--fitlog_Desc',    type=str,   default="PANNS_res38_pre")
-parser.add_argument('--train_name',     type=str,   default="PANNS_res38_pre")
+parser.add_argument('--fitlog_DATASET', type=str,   default="vox2+sdsv")
+parser.add_argument('--fitlog_Desc',    type=str,   default="X-vector(4GPU+SoxAug)")
+parser.add_argument('--train_name',     type=str,   default="X-vector(4GPU+SoxAug)")
 parser.add_argument('--mixedprec',      dest='mixedprec',   action='store_true', help='Enable mixed precision training')
-parser.add_argument('--GPU',            type=str,   default="4")
+parser.add_argument('--GPU',            type=str,   default="4, 5")
 
 ## For test only
 parser.add_argument('--distance_m',     type=str, default="cosine", help='Eval distance metric')
@@ -162,7 +162,9 @@ def main_worker(gpu, ngpus_per_node, args):
     result_save_path    = os.path.join(args.trainlogs, args.train_name, "result")
     if args.gpu == 0:
         ## fitlog
-        training_utils.standard_fitlog_init(**vars(args))
+        if not args.eval:
+            # training_utils.standard_fitlog_init(**vars(args))
+            pass
 
         ## tb
         tbxwriter = training_utils.tensorboard_init(**vars(args))
@@ -219,16 +221,16 @@ def main_worker(gpu, ngpus_per_node, args):
         scorefile.write('EER %2.4f MINC@0.01 %.5f MINC@0.001 %.5f\n'%(result[1], result[-2], result[-1]))
         scorefile.flush()
 
-        fitlog.add_best_metric({"Voxceleb_O":{"EER":result[1]}})
-        fitlog.add_best_metric({"Voxceleb_O":{"MINC_0.01":result[-2]}})
-        fitlog.add_best_metric({"Voxceleb_O":{"MINC_0.001":result[-1]}})
+        # fitlog.add_best_metric({"Voxceleb_O":{"EER":result[1]}})
+        # fitlog.add_best_metric({"Voxceleb_O":{"MINC_0.01":result[-2]}})
+        # fitlog.add_best_metric({"Voxceleb_O":{"MINC_0.001":result[-1]}})
 
         ## Save scores
         print('Auto save scores to results dir.')
         with open(result_save_path+"/eval_scores.txt",'w') as outfile:
             for vi, val in enumerate(sc):
                 outfile.write('%.4f %s\n'%(val,trials[vi]))
-        fitlog.finish()
+        # fitlog.finish()
         tbxwriter.close()
         return
     
@@ -253,13 +255,13 @@ def main_worker(gpu, ngpus_per_node, args):
         if it % args.test_interval == 0 or stop == True:
 
             # print(time.strftime("%Y-%m-%d %H:%M:%S"), it, "Evaluating...")
-
-            sc, lab, trials = trainer.evaluateFromList(args.test_list, distance_m=args.distance_m, print_interval=100, \
-            test_path=args.test_path, eval_frames=args.eval_frames, verbose=(args.gpu==0))
-
-            # sc, lab, trials = trainer.evaluateFromListAndDict(listfilename=args.test_list, enrollfilename=args.enroll_list, \
-            # distance_m=arg.distance_m, print_interval=100, \
-            # test_path=args.test_path, eval_frames=args.eval_frames, verbose=(args.gpu==0))
+            if args.enroll_list == '': 
+                sc, lab, trials = trainer.evaluateFromList(args.test_list, distance_m=args.distance_m, print_interval=100, \
+                test_path=args.test_path, eval_frames=args.eval_frames, verbose=(args.gpu==0))
+            else:
+                sc, lab, trials = trainer.evaluateFromListAndDict(listfilename=args.test_list, enrollfilename=args.enroll_list, \
+                distance_m=args.distance_m, print_interval=100, \
+                test_path=args.test_path, eval_frames=args.eval_frames, verbose=(args.gpu==0))
 
             result = tuneThresholdfromScore_std(sc, lab)
 
@@ -273,11 +275,11 @@ def main_worker(gpu, ngpus_per_node, args):
 
             if args.gpu == 0:
                 ## Add fitlog
-                training_utils.vox1_o_ASV_step_fitlog(result[1], result[-2], result[-1], it)
+                # training_utils.vox1_o_ASV_step_fitlog(result[1], result[-2], result[-1], it)
 
-                ## If best add best fitlog and log scores
-                if result[1] == min(min_eer):
-                    training_utils.vox1_o_ASV_best_fitlog(result[1], result[-2], result[-1])
+                # ## If best add best fitlog and log scores
+                # if result[1] == min(min_eer):
+                #     training_utils.vox1_o_ASV_best_fitlog(result[1], result[-2], result[-1])
                     
                 with open(result_save_path+"/model%09d.vox1osc"%it,'w') as outfile:
                     for vi, val in enumerate(sc):
@@ -286,11 +288,11 @@ def main_worker(gpu, ngpus_per_node, args):
                 trainer.saveParameters(model_save_path+"/model%09d.model"%it)
                 
                 with open(model_save_path+"/model%09d.eer"%it, 'w') as eerfile:
-                    eerfile.write('%.4f'%result[1])
+                    eerfile.write('%.4f %.5f'%(result[1], result[-2]))
 
             if stop == True:
                 if args.gpu == 0:
-                    fitlog.finish()
+                    # fitlog.finish()
                     tbxwriter.close()
                 return
 
@@ -300,7 +302,7 @@ def main_worker(gpu, ngpus_per_node, args):
             scorefile.flush()
         if it >= args.max_epoch:
             if args.gpu == 0:
-                fitlog.finish()
+                # fitlog.finish()
                 tbxwriter.close()
             return
 

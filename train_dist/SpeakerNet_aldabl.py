@@ -94,9 +94,12 @@ class ModelTrainer_ALDA(object):
         self.stop = False
         self.tbxwriter = tbxwriter
 
-        self.beta = 0.01
+        self.beta = 0.00
         self.gamma = 0.1
         self.warm_step = 10000
+
+        ## balance training params
+        self.spk_label_offset = [0, 5994]
 
     ## ===== ===== ===== ===== ===== ===== ===== =====
     ## Train network
@@ -128,10 +131,10 @@ class ModelTrainer_ALDA(object):
             data_label_list = []
             domain_label_list = []
             try:
-                for loader_iter in loader_iteraters:
+                for count, loader_iter in enumerate(loader_iteraters):
                     data, data_label, domain_label = next(loader_iter)
                     data_list.append(data)
-                    data_label_list.append(data_label)
+                    data_label_list.append(data_label+self.spk_label_offset[count])
                     domain_label_list.append(domain_label)
 
                 data = torch.cat(data_list, dim=0)
@@ -307,9 +310,9 @@ class ModelTrainer_ALDA(object):
             # ref_feat = (feats[data[1]] - mean_vector).cuda() 
             # com_feat = (feats[data[2]] - mean_vector).cuda()
 
-            if self.__model__.module.__L__.test_normalize:
-                ref_feat = F.normalize(ref_feat, p=2, dim=1)
-                com_feat = F.normalize(com_feat, p=2, dim=1)
+            # if self.__model__.module.__L__.test_normalize:
+            ref_feat = F.normalize(ref_feat, p=2, dim=1)
+            com_feat = F.normalize(com_feat, p=2, dim=1)
 
             if distance_m == 'L2':
                 dist = F.pairwise_distance(ref_feat.unsqueeze(-1), com_feat.unsqueeze(-1).transpose(0,2)).numpy()
@@ -454,9 +457,9 @@ class ModelTrainer_ALDA(object):
             # ref_feat = (torch.mean(enroll_feats[data[1]], axis=0, keepdim=True) - mean_vector).cuda() 
             # com_feat = (trial_feats[data[2]] - mean_vector).cuda()
 
-            if self.__model__.module.__L__.test_normalize:
-                ref_feat = F.normalize(ref_feat, p=2, dim=1)
-                com_feat = F.normalize(com_feat, p=2, dim=1)
+            # if self.__model__.module.__L__.test_normalize:
+            ref_feat = F.normalize(ref_feat, p=2, dim=1)
+            com_feat = F.normalize(com_feat, p=2, dim=1)
 
             if distance_m == 'L2':
                 dist = F.pairwise_distance(ref_feat.unsqueeze(-1), com_feat.unsqueeze(-1).transpose(0,2)).numpy()
@@ -503,6 +506,17 @@ class ModelTrainer_ALDA(object):
 
         for name, param in loaded_state['model'].items():
             origname = name
+
+            ## pass spk clf weight
+            if '__L__' in name:
+                print('pass __L__ classerfier W')
+                continue
+
+            ## pass DA weight
+            if 'DA_module' in name:
+                print('pass DA_module params:'+name)
+                continue
+
             if name not in self_state:
                 name = name.replace("module.", "")
 

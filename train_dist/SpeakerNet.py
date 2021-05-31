@@ -228,14 +228,15 @@ class ModelTrainer(object):
             # ref_feat = (feats[data[1]] - mean_vector).cuda() 
             # com_feat = (feats[data[2]] - mean_vector).cuda()
 
-            if self.__model__.module.__L__.test_normalize:
-                ref_feat = F.normalize(ref_feat, p=2, dim=1)
-                com_feat = F.normalize(com_feat, p=2, dim=1)
+            # if self.__model__.module.__L__.test_normalize:
+            ref_feat = F.normalize(ref_feat, p=2, dim=1)
+            com_feat = F.normalize(com_feat, p=2, dim=1)
 
             if distance_m == 'L2':
                 dist = F.pairwise_distance(ref_feat.unsqueeze(-1), com_feat.unsqueeze(-1).transpose(0,2)).numpy()
                 score = -1 * numpy.mean(dist)
             elif distance_m == 'cosine':
+                ## [1, emb_size]
                 dist = F.cosine_similarity(ref_feat.unsqueeze(-1), com_feat.unsqueeze(-1).transpose(0,2)).numpy()
                 score = numpy.mean(dist)
 
@@ -333,7 +334,7 @@ class ModelTrainer(object):
 
             inp1 = torch.FloatTensor(loadWAV(os.path.join(test_path,file), eval_frames, evalmode=True, num_eval=num_eval)).cuda()
 
-            ref_feat = self.__S__.forward(inp1).detach().cpu()
+            ref_feat = self.__model__.forward(inp1).detach().cpu()
 
             trial_feats[file]     = ref_feat
 
@@ -349,15 +350,15 @@ class ModelTrainer(object):
         tstart = time.time()
 
         ## Compute mean
-        mean_vector = torch.zeros([192])
-        for count1, i in enumerate(trial_feats):
-            mean_vector = mean_vector + torch.mean(trial_feats[i], axis=0)
-        for count2, i in enumerate(enroll_feats):
-            mean_vector = mean_vector + torch.mean(enroll_feats[i], axis=0)
-        mean_vector = mean_vector / (count1+1+count2+1)
+        # mean_vector = torch.zeros([192])
+        # for count1, i in enumerate(trial_feats):
+        #     mean_vector = mean_vector + torch.mean(trial_feats[i], axis=0)
+        # for count2, i in enumerate(enroll_feats):
+        #     mean_vector = mean_vector + torch.mean(enroll_feats[i], axis=0)
+        # mean_vector = mean_vector / (count1+1+count2+1)
 
-        if verbose:
-            print('\nmean vec: ', mean_vector.shape)
+        # if verbose:
+        #     print('\nmean vec: ', mean_vector.shape)
 
         ## Read files and compute all scores
         for idx, line in enumerate(trial_lines):
@@ -375,9 +376,9 @@ class ModelTrainer(object):
             # ref_feat = (torch.mean(enroll_feats[data[1]], axis=0, keepdim=True) - mean_vector).cuda() 
             # com_feat = (trial_feats[data[2]] - mean_vector).cuda()
 
-            if self.__model__.module.__L__.test_normalize:
-                ref_feat = F.normalize(ref_feat, p=2, dim=1)
-                com_feat = F.normalize(com_feat, p=2, dim=1)
+            # if self.__model__.module.__L__.test_normalize:
+            ref_feat = F.normalize(ref_feat, p=2, dim=1)
+            com_feat = F.normalize(com_feat, p=2, dim=1)
 
             if distance_m == 'L2':
                 dist = F.pairwise_distance(ref_feat.unsqueeze(-1), com_feat.unsqueeze(-1).transpose(0,2)).numpy()
@@ -463,18 +464,28 @@ class ModelTrainer(object):
             # loaded_state = loaded_state['optimizer']
             self.__optimizer__.load_state_dict(loaded_state['optimizer'])
 
-            loaded_state['scheduler']['last_epoch'] = loaded_state['scheduler']['last_epoch'] - 1
-            loaded_state['scheduler']['_step_count'] = loaded_state['scheduler']['_step_count'] - 1
-
-            print('#Scheduler -1 last_e: %d step_count: %d'%\
-            (loaded_state['scheduler']['last_epoch'], loaded_state['scheduler']['_step_count']))
-
-            self.__scheduler__.load_state_dict(loaded_state['scheduler'])
-            self.__scheduler__.step()
-
             self.scaler.load_state_dict(loaded_state["scaler"])
 
             self.total_step = loaded_state['total_step']
             print('#Resume from step: %d'%(self.total_step))
+
+            ## Load sheduler
+            print('load sch ori saved')
+            print(loaded_state['scheduler'])
+
+            loaded_state['scheduler']['last_epoch'] = loaded_state['scheduler']['last_epoch'] - 1
+            loaded_state['scheduler']['T_cur'] = loaded_state['scheduler']['T_cur'] - 1
+            loaded_state['scheduler']['_step_count'] = 0
+
+            print('load sch small change')
+            print(loaded_state['scheduler'])
+
+            self.__scheduler__.load_state_dict(loaded_state['scheduler'])
+            self.__scheduler__.step()
+
+            print('loaded self.__scheduler__ state and training go! should be same as ori saved.')
+            print(self.__scheduler__.state_dict())
+
+
         else:
             print('#Only params are loaded, start from beginning...')

@@ -32,13 +32,13 @@ parser.add_argument('--config',         type=str,   default=None,   help='Config
 ## Data loader
 parser.add_argument('--max_frames',     type=int,   default=300,    help='Input length to the network for training');
 parser.add_argument('--eval_frames',    type=int,   default=0,    help='Input length to the network for testing; 0 uses the whole files');
-parser.add_argument('--batch_size',     type=int,   default=128,    help='Batch size, number of speakers per batch');
+parser.add_argument('--batch_size',     type=int,   default=100,    help='Batch size, number of speakers per batch');
 parser.add_argument('--max_seg_per_spk', type=int,  default=100,    help='Maximum number of utterances per speaker per epoch');
 parser.add_argument('--nDataLoaderThread', type=int, default=5,     help='Number of loader threads');
 parser.add_argument('--augment',        type=bool,  default=True,  help='Augment input')
 
 ## Training details
-parser.add_argument('--test_interval',  type=int,   default=10,     help='Test and save every [test_interval] epochs');
+parser.add_argument('--test_interval',  type=int,   default=20,     help='Test and save every [test_interval] epochs');
 parser.add_argument('--max_epoch',      type=int,   default=200,    help='Maximum number of epochs');
 parser.add_argument('--trainfunc',      type=str,   default="",     help='Loss function');
 
@@ -46,10 +46,10 @@ parser.add_argument('--trainfunc',      type=str,   default="",     help='Loss f
 parser.add_argument('--optimizer',      type=str,   default="sgd", help='sgd or adam');
 parser.add_argument('--scheduler',      type=str,   default="cosine", help='Learning rate scheduler');
 parser.add_argument('--lr_step',        type=str,   default="iteration", help='Learning rate scheduler');
-parser.add_argument('--lr',             type=float, default=0.01,  help='Learning rate');
+parser.add_argument('--lr',             type=float, default=0.001,  help='Learning rate');
 parser.add_argument('--base_lr',        type=float, default=1e-5,  help='Learning rate min');
 parser.add_argument('--cycle_step',     type=int, default=None,  help='Learning rate cycle');
-parser.add_argument('--expected_step',  type=int, default=520000,  help='Total steps');
+parser.add_argument('--expected_step',  type=int, default=520000//2,  help='Total steps');
 parser.add_argument("--lr_decay",       type=float, default=0.25,   help='Learning rate decay every [test_interval] epochs');
 parser.add_argument('--weight_decay',   type=float, default=5e-4,      help='Weight decay in the optimizer');
 
@@ -59,21 +59,21 @@ parser.add_argument("--hard_rank",      type=int,   default=None,     help='Hard
 parser.add_argument('--margin',         type=float, default=0.2,      help='Loss margin, only for some loss functions');
 parser.add_argument('--scale',          type=float, default=30,     help='Loss scale, only for some loss functions');
 parser.add_argument('--nPerSpeaker',    type=int,   default=1,      help='Number of utterances per speaker per batch, only for metric learning based losses');
-parser.add_argument('--nClasses',       type=int,   default=5994,   help='Number of speakers in the softmax layer, only for softmax-based losses');
+parser.add_argument('--nClasses',       type=int,   default=11335,   help='Number of speakers in the softmax layer, only for softmax-based losses');
 
 ## Load and save
 parser.add_argument('--initial_model',  type=str,   default="",     help='Initial model weights');
 # parser.add_argument('--save_path',      type=str,   default="", help='Path for model and logs');
 
 ## Training and test data
-parser.add_argument('--train_list',     type=str,   default="/workspace/DATASET/server9_ssd/sdsv_voxceleb_da/vox2sdsv20_488.txt",     help='Train list')
-parser.add_argument('--test_list',      type=str,   default="/workspace/DATASET/server9_ssd/voxceleb/vox_o_triallist.txt",     help='Evaluation list')
-parser.add_argument('--test_list_sdsv',      type=str,   default="/workspace/DATASET/server9_ssd/sdsv20/sdsv20_triallist488_listonly.txt", help='Absolute path to the sdsv test set')
-parser.add_argument('--enroll_list',    type=str,   default="",     help='Enroll list')
+parser.add_argument('--train_list',     type=str,   default="/workspace/DATASET/server9_ssd/sdsv21/T1_sdsv21_SDSVDA_11335.txt",     help='Train list')
+parser.add_argument('--test_list',      type=str,   default="/workspace/DATASET/server9_ssd/sdsv21/vox_o_triallist.txt",     help='Evaluation list')
+parser.add_argument('--test_list_sdsv',      type=str,   default="/workspace/DATASET/server9_ssd/sdsv21/task1_asv_devtriallist.txt", help='Absolute path to the sdsv test set')
+parser.add_argument('--enroll_list',    type=str,   default="/workspace/DATASET/server9_ssd/sdsv21/sdsv20_task1_enrolllist.txt",     help='Enroll list')
 
-parser.add_argument('--train_path',     type=str,   default="/workspace/DATASET/server9_ssd/sdsv_voxceleb_da", help='Absolute path to the train set')
-parser.add_argument('--test_path',      type=str,   default="/workspace/DATASET/server9_ssd/voxceleb", help='Absolute path to the test set')
-parser.add_argument('--test_path_sdsv',      type=str,   default="/workspace/DATASET/server9_ssd/sdsv20", help='Absolute path to the test set')
+parser.add_argument('--train_path',     type=str,   default="/workspace/DATASET/server9_ssd/sdsv21", help='Absolute path to the train set')
+parser.add_argument('--test_path',      type=str,   default="/workspace/DATASET/server9_ssd/sdsv21", help='Absolute path to the test set')
+parser.add_argument('--test_path_sdsv',      type=str,   default="/workspace/DATASET/server9_ssd/sdsv21", help='Absolute path to the test set')
 
 parser.add_argument('--musan_path',     type=str,   default="/workspace/DATASET/server9_ssd/musan_split", help='Absolute path to the test set')
 parser.add_argument('--rir_path',       type=str,   default="/workspace/DATASET/server9_ssd/RIRS_NOISES/simulated_rirs", help='Absolute path to the test set')
@@ -90,18 +90,18 @@ parser.add_argument('--Syncbatch',       type=bool,  default=False,    help='Use
 
 ## DA
 parser.add_argument('--domain_classes',  type=int,   default=2,    help='domain classes')
-parser.add_argument('--ori_weight_dict',  type=json.loads,   default='{"0":"14", "1":"1"}')
+parser.add_argument('--ori_weight_dict',  type=json.loads,   default='{"0":"11", "1":"1"}')
 
 
 ## Training Control
-parser.add_argument('--trainlogs',      type=str,   default="/workspace/LOGS_OUTPUT/tmp_logs/train_logs_201120");
-parser.add_argument('--fitlogdir',      type=str,   default="/workspace/LOGS_OUTPUT/tmp_logs/ASV_LOGS_201120");
-parser.add_argument('--tbxdir',         type=str,   default="/workspace/LOGS_OUTPUT/tmp_logs/tbx")
-parser.add_argument('--fitlog_DATASET', type=str,   default="otf_vox2_aug");
-parser.add_argument('--fitlog_Desc',    type=str,   default="test2");
-parser.add_argument('--train_name',     type=str,   default="test2");
+parser.add_argument('--trainlogs',      type=str,   default="/workspace/LOGS_OUTPUT/server9_nvme1/ASV_LOGS_202102/train_logs_201120");
+parser.add_argument('--fitlogdir',      type=str,   default="/workspace/LOGS_OUTPUT/server9_nvme1/ASV_LOGS_202102/ASV_LOGS_201120");
+parser.add_argument('--tbxdir',         type=str,   default="/workspace/LOGS_OUTPUT/server9_nvme1/ASV_LOGS_202102/tbx")
+parser.add_argument('--fitlog_DATASET', type=str,   default="vox2&sdsv1");
+parser.add_argument('--fitlog_Desc',    type=str,   default="TASK1mixtunepretrainedDAT+(vox+sdsvT1)");
+parser.add_argument('--train_name',     type=str,   default="TASK1mixtunepretrainedDAT+(vox+sdsvT1)");
 parser.add_argument('--mixedprec',      dest='mixedprec',   action='store_true', help='Enable mixed precision training')
-parser.add_argument('--GPU',            type=str,   default="7");
+parser.add_argument('--GPU',            type=str,   default="4");
 
 ## For test only
 parser.add_argument('--distance_m',     type=str, default="cosine", help='Eval distance metric')
@@ -173,7 +173,7 @@ def main_worker(gpu, ngpus_per_node, args):
     result_save_path    = os.path.join(args.trainlogs, args.train_name, "result")
     if args.gpu == 0:
         ## fitlog
-        training_utils.standard_fitlog_init(**vars(args))
+        # training_utils.standard_fitlog_init(**vars(args))
 
         ## tb
         tbxwriter = training_utils.tensorboard_init(**vars(args))
@@ -279,22 +279,30 @@ def main_worker(gpu, ngpus_per_node, args):
             scorefile.flush()
 
             if args.gpu == 0:
-                ## Add fitlog
-                training_utils.vox1_o_ASV_step_fitlog(result[1], result[-2], result[-1], it)
+                # ## Add fitlog
+                # training_utils.vox1_o_ASV_step_fitlog(result[1], result[-2], result[-1], it)
 
-                ## If best add best fitlog and log scores
-                if result[1] == min(min_eer):
-                    training_utils.vox1_o_ASV_best_fitlog(result[1], result[-2], result[-1])
+                # ## If best add best fitlog and log scores
+                # if result[1] == min(min_eer):
+                #     training_utils.vox1_o_ASV_best_fitlog(result[1], result[-2], result[-1])
                     
                 with open(result_save_path+"/model%09d.vox1osc"%it,'w') as outfile:
                     for vi, val in enumerate(sc):
                         outfile.write('%.4f %s\n'%(val,trials[vi]))
                 
                 with open(model_save_path+"/model%09d.eervox1o"%it, 'w') as eerfile:
-                    eerfile.write('%.4f'%result[1])
+                    eerfile.write('%.4f %.4f'%(result[1], result[-2]))
 
-            sc, lab, trials = trainer.evaluateFromList(args.test_list_sdsv, distance_m=args.distance_m, print_interval=100, \
-            test_path=args.test_path_sdsv, eval_frames=args.eval_frames, verbose=(args.gpu==0))
+            # sc, lab, trials = trainer.evaluateFromList(args.test_list_sdsv, distance_m=args.distance_m, print_interval=100, \
+            # test_path=args.test_path_sdsv, eval_frames=args.eval_frames, verbose=(args.gpu==0))
+
+            if args.enroll_list == '': 
+                sc, lab, trials = trainer.evaluateFromList(args.test_list_sdsv, distance_m=args.distance_m, print_interval=100, \
+                test_path=args.test_path_sdsv, eval_frames=args.eval_frames, verbose=(args.gpu==0))
+            else:
+                sc, lab, trials = trainer.evaluateFromListAndDict(listfilename=args.test_list_sdsv, enrollfilename=args.enroll_list, \
+                distance_m=args.distance_m, print_interval=100, \
+                test_path=args.test_path_sdsv, eval_frames=args.eval_frames, verbose=(args.gpu==0))
 
             result = tuneThresholdfromScore_std(sc, lab)
 
@@ -307,26 +315,26 @@ def main_worker(gpu, ngpus_per_node, args):
             scorefile.flush()
 
             if args.gpu == 0:
-                ## Add fitlog
-                training_utils.sdsvdev_ASV_step_fitlog(result[1], result[-2], result[-1], it)
+                # ## Add fitlog
+                # training_utils.sdsvdev_ASV_step_fitlog(result[1], result[-2], result[-1], it)
 
-                ## If best add best fitlog and log scores
-                if result[1] == min(min_eer_sdsv):
-                    training_utils.sdsvdev_ASV_best_fitlog(result[1], result[-2], result[-1])
+                # ## If best add best fitlog and log scores
+                # if result[1] == min(min_eer_sdsv):
+                #     training_utils.sdsvdev_ASV_best_fitlog(result[1], result[-2], result[-1])
                     
                 with open(result_save_path+"/model%09d.sdsvdevsc"%it,'w') as outfile:
                     for vi, val in enumerate(sc):
                         outfile.write('%.4f %s\n'%(val,trials[vi]))
                 
                 with open(model_save_path+"/model%09d.eersdsvdev"%it, 'w') as eerfile:
-                    eerfile.write('%.4f'%result[1])
+                    eerfile.write('%.4f %.4f'%(result[1], result[-2]))
             
             if args.gpu == 0:
                 trainer.saveParameters(model_save_path+"/model%09d.model"%it)
 
             if stop == True:
                 if args.gpu == 0:
-                    fitlog.finish()
+                    # fitlog.finish()
                     tbxwriter.close()
                 return
 
@@ -337,7 +345,7 @@ def main_worker(gpu, ngpus_per_node, args):
 
         if it >= args.max_epoch:
             if args.gpu == 0:
-                fitlog.finish()
+                # fitlog.finish()
                 tbxwriter.close()
             return
 

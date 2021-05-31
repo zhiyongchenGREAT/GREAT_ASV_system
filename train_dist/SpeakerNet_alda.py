@@ -50,8 +50,7 @@ class SpeakerNet(nn.Module):
         data    = data.reshape(-1,data.size()[-1]).cuda() 
         outp    = self.__S__.forward(data)
 
-        # print(label)
-        # print(domain_label)
+
 
         if label == None:
             return outp
@@ -97,7 +96,6 @@ class ModelTrainer_ALDA(object):
         self.beta = 0.01
         self.gamma = 0.1
         self.warm_step = 10000
-
     ## ===== ===== ===== ===== ===== ===== ===== =====
     ## Train network
     ## ===== ===== ===== ===== ===== ===== ===== =====
@@ -143,13 +141,7 @@ class ModelTrainer_ALDA(object):
 
                 self.scaler.scale(gamma*loss_d).backward()
                 self.scaler.step(self.opt_d)
-                # print(self.opt_e_c)
-                # print(self.opt_d)
-                # print(self.opt_e_c.state_dict()['param_groups'])
-                # print(self.opt_d.state_dict()['param_groups'])
-
-                self.scaler.update()
-                
+                self.scaler.update()                
             else:
 
                 [loss_c, loss_d, loss_al], [acc, acc_d] = self.__model__(data, label, domain_label)
@@ -260,14 +252,6 @@ class ModelTrainer_ALDA(object):
             if (idx % print_interval == 0) and verbose:
                 sys.stdout.write("\rReading %d of %d: %.2f Hz, embedding size %d"%(idx,len(setfiles),idx/telapsed,ref_feat.size()[1]))
 
-        ## Compute mean
-        mean_vector = torch.zeros([192])
-        for count, i in enumerate(feats):
-            mean_vector = mean_vector + torch.mean(feats[i], axis=0)
-        mean_vector = mean_vector / (count+1)
-
-        if verbose:
-            print('\nmean vec: ', mean_vector.shape)
 
         all_scores = []
         all_labels = []
@@ -288,9 +272,9 @@ class ModelTrainer_ALDA(object):
             # ref_feat = (feats[data[1]] - mean_vector).cuda() 
             # com_feat = (feats[data[2]] - mean_vector).cuda()
 
-            if self.__model__.module.__L__.test_normalize:
-                ref_feat = F.normalize(ref_feat, p=2, dim=1)
-                com_feat = F.normalize(com_feat, p=2, dim=1)
+            # if self.__model__.module.__L__.test_normalize:
+            ref_feat = F.normalize(ref_feat, p=2, dim=1)
+            com_feat = F.normalize(com_feat, p=2, dim=1)
 
             if distance_m == 'L2':
                 dist = F.pairwise_distance(ref_feat.unsqueeze(-1), com_feat.unsqueeze(-1).transpose(0,2)).numpy()
@@ -408,16 +392,6 @@ class ModelTrainer_ALDA(object):
         all_trials = []
         tstart = time.time()
 
-        # ## Compute mean
-        # mean_vector = torch.zeros([192])
-        # for count1, i in enumerate(trial_feats):
-        #     mean_vector = mean_vector + torch.mean(trial_feats[i], axis=0)
-        # for count2, i in enumerate(enroll_feats):
-        #     mean_vector = mean_vector + torch.mean(enroll_feats[i], axis=0)
-        # mean_vector = mean_vector / (count1+1+count2+1)
-
-        # if verbose:
-        #     print('\nmean vec: ', mean_vector.shape)
 
         ## Read files and compute all scores
         for idx, line in enumerate(trial_lines):
@@ -432,12 +406,9 @@ class ModelTrainer_ALDA(object):
             ref_feat = torch.mean(enroll_feats[data[1]], axis=0, keepdim=True)
             com_feat = trial_feats[data[2]]
 
-            # ref_feat = (torch.mean(enroll_feats[data[1]], axis=0, keepdim=True) - mean_vector).cuda() 
-            # com_feat = (trial_feats[data[2]] - mean_vector).cuda()
-
-            if self.__model__.module.__L__.test_normalize:
-                ref_feat = F.normalize(ref_feat, p=2, dim=1)
-                com_feat = F.normalize(com_feat, p=2, dim=1)
+            # if self.__model__.module.__L__.test_normalize:
+            ref_feat = F.normalize(ref_feat, p=2, dim=1)
+            com_feat = F.normalize(com_feat, p=2, dim=1)
 
             if distance_m == 'L2':
                 dist = F.pairwise_distance(ref_feat.unsqueeze(-1), com_feat.unsqueeze(-1).transpose(0,2)).numpy()
@@ -484,6 +455,17 @@ class ModelTrainer_ALDA(object):
 
         for name, param in loaded_state['model'].items():
             origname = name
+
+            ## pass spk clf weight
+            if '__L__' in name:
+                print('pass __L__ classerfier W')
+                continue
+
+            ## pass DA weight
+            if 'DA_module' in name:
+                print('pass DA_module params:'+name)
+                continue
+
             if name not in self_state:
                 name = name.replace("module.", "")
 
