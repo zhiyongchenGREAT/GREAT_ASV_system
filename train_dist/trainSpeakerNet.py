@@ -88,10 +88,10 @@ parser.add_argument('--trainlogs',      type=str,   default="/workspace/LOGS_OUT
 parser.add_argument('--fitlogdir',      type=str,   default="/workspace/LOGS_OUTPUT/server9_nvme1/ASV_LOGS_202102/ASV_LOGS_201120")
 parser.add_argument('--tbxdir',         type=str,   default="/workspace/LOGS_OUTPUT/server9_nvme1/ASV_LOGS_202102/tbx")
 parser.add_argument('--fitlog_DATASET', type=str,   default="vox2+sdsv")
-parser.add_argument('--fitlog_Desc',    type=str,   default="X-vector(4GPU+SoxAug)")
-parser.add_argument('--train_name',     type=str,   default="X-vector(4GPU+SoxAug)")
+parser.add_argument('--fitlog_Desc',    type=str,   default="test01")
+parser.add_argument('--train_name',     type=str,   default="test01")
 parser.add_argument('--mixedprec',      dest='mixedprec',   action='store_true', help='Enable mixed precision training')
-parser.add_argument('--GPU',            type=str,   default="4, 5")
+parser.add_argument('--GPU',            type=str,   default="3")
 
 ## For test only
 parser.add_argument('--distance_m',     type=str, default="cosine", help='Eval distance metric')
