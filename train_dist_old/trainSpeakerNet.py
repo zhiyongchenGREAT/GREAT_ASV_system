@@ -48,7 +48,7 @@ parser.add_argument('--lr_step',        type=str,   default="iteration", help='L
 parser.add_argument('--lr',             type=float, default=0.01,  help='Learning rate')
 parser.add_argument('--base_lr',        type=float, default=1e-5,  help='Learning rate min')
 parser.add_argument('--cycle_step',     type=int, default=None,  help='Learning rate cycle')
-parser.add_argument('--expected_step',  type=int, default=520000,  help='Total steps')
+parser.add_argument('--expected_step',  type=int, default=520000*3,  help='Total steps')
 parser.add_argument("--lr_decay",       type=float, default=0.25,   help='Learning rate decay every [test_interval] epochs')
 parser.add_argument('--weight_decay',   type=float, default=5e-4,      help='Weight decay in the optimizer')
 
@@ -58,7 +58,7 @@ parser.add_argument("--hard_rank",      type=int,   default=None,     help='Hard
 parser.add_argument('--margin',         type=float, default=0.2,      help='Loss margin, only for some loss functions')
 parser.add_argument('--scale',          type=float, default=30,     help='Loss scale, only for some loss functions')
 parser.add_argument('--nPerSpeaker',    type=int,   default=1,      help='Number of utterances per speaker per batch, only for metric learning based losses')
-parser.add_argument('--nClasses',       type=int,   default=5994,   help='Number of speakers in the softmax layer, only for softmax-based losses')
+parser.add_argument('--nClasses',       type=int,   default=5994*3,   help='Number of speakers in the softmax layer, only for softmax-based losses')
 
 ## Load and save
 parser.add_argument('--initial_model',  type=str,   default="",     help='Initial model weights')
@@ -80,18 +80,18 @@ parser.add_argument('--model',          type=str,   default="",     help='Name o
 parser.add_argument('--encoder_type',   type=str,   default="",  help='Type of encoder')
 parser.add_argument('--nOut',           type=int,   default=192,    help='Embedding size in the last FC layer')
 parser.add_argument('--spec_aug',       type=bool,  default=True,    help='Use spec aug or not')
-parser.add_argument('--sox_aug',       type=bool,  default=False,    help='Use sox aug or not')
+parser.add_argument('--sox_aug',       type=bool,  default=True,    help='Use sox aug or not')
 parser.add_argument('--Syncbatch',       type=bool,  default=False,    help='Use sox aug or not')
 
 ## Training Control
 parser.add_argument('--trainlogs',      type=str,   default="/workspace/LOGS_OUTPUT/server9_nvme1/ASV_LOGS_202102/train_logs_201120")
 parser.add_argument('--fitlogdir',      type=str,   default="/workspace/LOGS_OUTPUT/server9_nvme1/ASV_LOGS_202102/ASV_LOGS_201120")
 parser.add_argument('--tbxdir',         type=str,   default="/workspace/LOGS_OUTPUT/server9_nvme1/ASV_LOGS_202102/tbx")
-parser.add_argument('--fitlog_DATASET', type=str,   default="vox2")
-parser.add_argument('--fitlog_Desc',    type=str,   default="X_vector_retest")
-parser.add_argument('--train_name',     type=str,   default="X_vector_retest")
+parser.add_argument('--fitlog_DATASET', type=str,   default="vox2+sdsv")
+parser.add_argument('--fitlog_Desc',    type=str,   default="test01")
+parser.add_argument('--train_name',     type=str,   default="test01")
 parser.add_argument('--mixedprec',      dest='mixedprec',   action='store_true', help='Enable mixed precision training')
-parser.add_argument('--GPU',            type=str,   default="2")
+parser.add_argument('--GPU',            type=str,   default="3")
 
 ## For test only
 parser.add_argument('--distance_m',     type=str, default="cosine", help='Eval distance metric')

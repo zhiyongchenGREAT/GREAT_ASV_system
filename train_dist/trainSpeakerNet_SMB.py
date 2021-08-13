@@ -10,7 +10,7 @@ import glob
 # import zipfile
 # import datetime
 from tuneThreshold import *
-from SpeakerNet import *
+from SpeakerNet_SMB import *
 from DatasetLoader import get_data_loader
 import shutil
 import training_utils
@@ -87,11 +87,11 @@ parser.add_argument('--Syncbatch',       type=bool,  default=False,    help='Use
 parser.add_argument('--trainlogs',      type=str,   default="/workspace/LOGS_OUTPUT/server9_nvme1/ASV_LOGS_202102/train_logs_201120")
 parser.add_argument('--fitlogdir',      type=str,   default="/workspace/LOGS_OUTPUT/server9_nvme1/ASV_LOGS_202102/ASV_LOGS_201120")
 parser.add_argument('--tbxdir',         type=str,   default="/workspace/LOGS_OUTPUT/server9_nvme1/ASV_LOGS_202102/tbx")
-parser.add_argument('--fitlog_DATASET', type=str,   default="vox2")
-parser.add_argument('--fitlog_Desc',    type=str,   default="X_vector_retest")
-parser.add_argument('--train_name',     type=str,   default="X_vector_retest")
+parser.add_argument('--fitlog_DATASET', type=str,   default="vox2+sdsv")
+parser.add_argument('--fitlog_Desc',    type=str,   default="xvector_SMB_testmarginnormal")
+parser.add_argument('--train_name',     type=str,   default="xvector_SMB_testmarginnormal")
 parser.add_argument('--mixedprec',      dest='mixedprec',   action='store_true', help='Enable mixed precision training')
-parser.add_argument('--GPU',            type=str,   default="2")
+parser.add_argument('--GPU',            type=str,   default="3")
 
 ## For test only
 parser.add_argument('--distance_m',     type=str, default="cosine", help='Eval distance metric')
